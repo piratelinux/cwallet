@@ -53,9 +53,10 @@ int priv_to_pub(const unsigned char * priv, size_t n, size_t m, unsigned char **
   BN_CTX_free(ctx);
 
   return(0);
+
 }
 
-int uchar_to_b58(const unsigned char * uchar, size_t n, size_t nr, char * result) {
+int uchar_to_b58(unsigned char * uchar, size_t n, size_t nr, char * result) {
 
   const char * b58chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
@@ -121,6 +122,7 @@ int uchar_to_b58(const unsigned char * uchar, size_t n, size_t nr, char * result
     }
   }
 
+  free(uchar);
   return(offset);
 
 }
@@ -159,8 +161,7 @@ int privkey_to_bc_format(const unsigned char * key, size_t n, unsigned char * pu
   free(keyext);
   free(hash1);
   free(hash2);
-  return uchar_to_b58(addr,n+5,51,result);
-  free(addr);
+  return(uchar_to_b58(addr,n+5,51,result));
 
 }
 
@@ -185,8 +186,8 @@ int pubkey_to_bc_format(const unsigned char * key, size_t n, char * result) {
   free(vh160);
   free(hash3);
   free(hash4);
-  return uchar_to_b58(addr,25,34,result);
-  free(addr);
+  return(uchar_to_b58(addr,25,34,result));
+
 }
 
 int main(int argc, char ** argv) {
