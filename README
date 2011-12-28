@@ -11,4 +11,4 @@ To run:
 [walletfile] is the path to your wallet file.
 If [walletfile] is not given, then cwallet will choose ~/.bitcoin/wallet.dat as the wallet file.
 
-The program will output each address and private key in base58 format. It will also check to make sure that the private key correctly corresponds to the address by performing a multiplication in Elliptic Curve space.
+The program will output each address and private key in Bitcoin's base58 format. It will also check to make sure that the private key correctly corresponds to the address by performing a multiplication in Elliptic Curve space.
