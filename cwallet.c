@@ -31,6 +31,9 @@ int priv_to_pub(const unsigned char * priv, size_t n, size_t m, unsigned char **
     BN_add(privbn,privbn,addribn);
     BN_mul(pow256, pow256, one256, ctx);
     BN_free(addribn);
+    if (addristr != 0) {
+      free(addristr);
+    }
     BN_CTX_free(ctx);
     addri--;
   }
@@ -75,6 +78,9 @@ int uchar_to_b58(const unsigned char * uchar, size_t n, size_t nr, char * result
     BN_add(lval,lval,addribn);
     BN_mul(pow256, pow256, one256, ctx);
     BN_free(addribn);
+    if (addristr != 0) {
+      free(addristr);
+    }
     BN_CTX_free(ctx);
     addri--;
   }
@@ -138,6 +144,8 @@ int privkey_to_bc_format(const unsigned char * key, size_t n, unsigned char * pu
     pubchecki++;
   }
 
+  free(pubcheck);
+
   unsigned char * keyext = malloc(n+1);
   *keyext = 128;
   memcpy(keyext+1,key,n);
@@ -148,8 +156,12 @@ int privkey_to_bc_format(const unsigned char * key, size_t n, unsigned char * pu
   unsigned char * addr = malloc(n+5);
   memcpy(addr,keyext,n+1);
   memcpy(addr+n+1,hash2,4);
+  free(keyext);
+  free(hash1);
+  free(hash2);
   return uchar_to_b58(addr,n+5,51,result);
-  
+  free(addr);
+
 }
 
 int pubkey_to_bc_format(const unsigned char * key, size_t n, char * result) {
@@ -168,8 +180,13 @@ int pubkey_to_bc_format(const unsigned char * key, size_t n, char * result) {
   unsigned char * addr = malloc(25);
   memcpy(addr,vh160,21);
   memcpy(addr+21,hash4,4);
+  free(hash1);
+  free(hash2);
+  free(vh160);
+  free(hash3);
+  free(hash4);
   return uchar_to_b58(addr,25,34,result);
-
+  free(addr);
 }
 
 int main(int argc, char ** argv) {
@@ -177,7 +194,7 @@ int main(int argc, char ** argv) {
   char * walletfile = 0;
 
   if (argc > 1) {
-    walletfile = argv[1];
+    walletfile = strdup(argv[1]);
   }
   else {
     char * homedir = getenv("HOME");
@@ -291,7 +308,16 @@ int main(int argc, char ** argv) {
     }
 
     printf("%s\n", privkey_bc+ret);
+
+    free(type);
+    free(pubkey);
+    free(pubkey_bc);
+    free(privkey);
+    free(privkey_bc);
+
   }
+
+  free(walletfile);
 
   if (ret != DB_NOTFOUND) {
     printf("error getting record\n");
