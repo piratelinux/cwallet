@@ -1,0 +1,12 @@
+Dependencies:
+- libdb-dev
+- libcrypto-dev
+
+To compile:
+make
+
+To run:
+./cwallet [walletfile]
+
+[walletfile] is the path to your wallet file.
+If [walletfile] is not given, then cwallet will choose ~/.bitcoin/wallet.dat as the wallet file.
