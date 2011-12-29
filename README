@@ -1,6 +1,6 @@
 Dependencies:
 - libdb-dev
-- libcrypto-dev
+- libssl-dev
 
 To compile:
 make
