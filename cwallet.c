@@ -39,17 +39,11 @@ int priv_to_pub(const unsigned char * priv, size_t n, size_t m, unsigned char **
   }
 
   EC_GROUP * group = EC_GROUP_new_by_curve_name(NID_secp256k1);
-
   EC_POINT * pub_key = EC_POINT_new(group);
-
   BN_CTX * ctx = BN_CTX_new();
-
   EC_POINT_mul(group, pub_key, privbn, 0, 0, ctx);
-
   EC_POINT_point2oct(group,pub_key,POINT_CONVERSION_UNCOMPRESSED,*result,m,ctx);
-  
   EC_POINT_free(pub_key);
-
   BN_CTX_free(ctx);
 
   return(0);
