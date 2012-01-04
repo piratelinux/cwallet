@@ -1,15 +1,45 @@
+Version: 0.1
+
 Dependencies:
-- libdb-dev (May need same version as that used in compiling Bitcoin)
+
+- libgtk2.0-dev
+- libdb4.8-dev (May need to manually change this if your wallet is created with a different version)
 - libssl-dev
+- qrencode
+- convert (ImageMagick)
 
 To compile:
+
+./configure
 make
 
-To run:
-./cwallet [walletfile]
+To run cwallet (command line version):
 
-[walletfile] is the path to your wallet file.
-If [walletfile] is not given, then cwallet will choose ~/.bitcoin/wallet.dat as the wallet file.
+cd src
+./cwallet
+
+To run cwaller-gui (graphical version)
+
+cd src
+./cwallet-gui
+
+Options for command line version:
+
+-w WALLET_FILE (defaults to ~/.bitcoin/wallet.dat)
+
+-d WORKING_DIRECTORY (defaults to directory the program is called from)
+
+-a ADDRESS (if not specified, all addresses are listed)
+
+-q QR_ENCODE (produce pdf file of private key in QR format)
+
+-o OUTPUT_FILE (file to save the pdf with QR encoding, defaults to WORKING_DIRECTORY/ADDRESS.pdf)
+
+Example:
+
+./cwallet -qa 1PkQCQmcyHR3gEPoBVLEchkVRYr5928Ko5
+
+Note:
 
 The program will output each address and private key in Bitcoin's base58 format. It will also check to make sure that the private key correctly corresponds to the address by performing a multiplication in Elliptic Curve space.
 
