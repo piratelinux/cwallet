@@ -53,8 +53,6 @@ int main(int argc, char ** argv) {
     }
   }
   
-  //printf ("wvalue = %s, dvalue = %s, avalue = %s, qflag = %d, ovalue = %s\n",wvalue, dvalue, avalue, qflag, ovalue);
-    
   for (index = optind; index < argc; index++) {
     printf ("Non-option argument %s\n", argv[index]);
   }
