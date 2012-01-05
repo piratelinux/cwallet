@@ -1,10 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <time.h>
 #include <gtk/gtk.h>
 
 typedef struct _Data Data;
