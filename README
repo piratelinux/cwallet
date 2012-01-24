@@ -69,5 +69,3 @@ Example:
 Note:
 
 The program will output each address and private key in Bitcoin's base58 format. It will also check to make sure that the private key correctly corresponds to the address by performing a multiplication in Elliptic Curve space.
-
-License: I, the author of this software dedicate the content of this software to the public domain, for whatever content it’s legally possible to do so.
