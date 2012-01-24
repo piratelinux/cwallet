@@ -1,0 +1,73 @@
+<p xmlns:dct="http://purl.org/dc/terms/" xmlns:vcard="http://www.w3.org/2001/vcard-rdf/3.0#">
+  <a rel="license"
+     href="http://creativecommons.org/publicdomain/zero/1.0/">
+    <img src="http://i.creativecommons.org/p/zero/1.0/80x15.png" style="border-style: none;" alt="CC0" />
+  </a>
+  <br />
+  To the extent possible under law,
+  <a rel="dct:publisher"
+     href="https://github.com/piratelinux/cwallet">
+    <span property="dct:title">Andrew K</span></a>
+  has waived all copyright and related or neighboring rights to
+  <span property="dct:title">Cwallet</span>.
+This work is published from:
+<span property="vcard:Country" datatype="dct:ISO3166"
+      content="CA" about="https://github.com/piratelinux/cwallet">
+  Canada</span>.
+</p>
+
+Version: 0.1
+
+Dependencies:
+
+- libgtk2.0-dev
+- libdb4.8-dev (May need to manually change this if your wallet is created with a different version)
+- libssl-dev
+- qrencode
+- convert (ImageMagick)
+
+To compile cwallet (command line version):
+
+cd src
+(set the INCLUDES and LIBS variables to be used in the makefile)
+export INCLUDES
+export LIBS
+make -f makefile.static
+
+To compile cwallet-gui (graphical version):
+
+./configure
+make
+
+To run cwallet:
+
+cd src
+./cwallet
+
+To run cwaller-gui:
+
+(make sure both cwallet and cwallet-gui are compiled)
+cd src
+./cwallet-gui
+
+Options for command line version:
+
+-w WALLET_FILE (defaults to ~/.bitcoin/wallet.dat)
+
+-d WORKING_DIRECTORY (defaults to directory the program is called from)
+
+-a ADDRESS (if not specified, all addresses are listed)
+
+-q (produce pdf file of private key QR coded)
+
+-o OUTPUT_FILE (file to save the pdf with QR encoding, defaults to WORKING_DIRECTORY/ADDRESS.pdf)
+
+Example:
+
+./cwallet -qa 1PkQCQmcyHR3gEPoBVLEchkVRYr5928Ko5
+
+Note:
+
+The program will output each address and private key in Bitcoin's base58 format. It will also check to make sure that the private key correctly corresponds to the address by performing a multiplication in Elliptic Curve space.
+
+License: I, the author of this software dedicate the content of this software to the public domain, for whatever content it’s legally possible to do so.
