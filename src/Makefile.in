@@ -47,7 +47,9 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_cwallet_OBJECTS = cwallet.$(OBJEXT)
 cwallet_OBJECTS = $(am_cwallet_OBJECTS)
-cwallet_DEPENDENCIES =
+cwallet_LDADD = $(LDADD)
+cwallet_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(cwallet_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_cwallet_gui_OBJECTS = cwallet-gui.$(OBJEXT)
 cwallet_gui_OBJECTS = $(am_cwallet_gui_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -159,8 +161,8 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 cwallet_SOURCES = cwallet.c
+cwallet_LDFLAGS = -Wl,-Bstatic -ldb-4.8 -lcrypto -Wl,-Bdynamic
 cwallet_gui_SOURCES = cwallet-gui.c
-cwallet_LDADD = -ldb-4.8 -lcrypto
 cwallet_gui_LDADD = $(GTK2_LIBS)
 AM_CPPFLAGS = $(GTK2_CFLAGS) -I$(CURDIR)
 all: all-am
@@ -236,7 +238,7 @@ clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
 cwallet$(EXEEXT): $(cwallet_OBJECTS) $(cwallet_DEPENDENCIES) 
 	@rm -f cwallet$(EXEEXT)
-	$(LINK) $(cwallet_OBJECTS) $(cwallet_LDADD) $(LIBS)
+	$(cwallet_LINK) $(cwallet_OBJECTS) $(cwallet_LDADD) $(LIBS)
 cwallet-gui$(EXEEXT): $(cwallet_gui_OBJECTS) $(cwallet_gui_DEPENDENCIES) 
 	@rm -f cwallet-gui$(EXEEXT)
 	$(LINK) $(cwallet_gui_OBJECTS) $(cwallet_gui_LDADD) $(LIBS)
