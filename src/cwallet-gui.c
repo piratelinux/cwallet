@@ -474,6 +474,19 @@ int
 main( int argc, char ** argv ) {
 
   int ret;
+
+  int addpathi = getargi("--addpath",argc,argv);
+  if (addpathi != -1) {
+    char * addpath = argv[addpathi+1];
+    char * oldpath = getenv("PATH");
+    char * newpath = g_malloc(strlen(addpath)+strlen(oldpath)+10);
+    strcpy(newpath,addpath);
+    strcat(newpath,":");
+    strcat(newpath,oldpath);
+    ret = setenv("PATH",newpath,1);
+    g_free(newpath);
+  }
+
   gchar * curpath = g_get_current_dir();
 
   gchar * procpath = g_malloc(32);
@@ -513,6 +526,9 @@ main( int argc, char ** argv ) {
   if (argc > 1) {
     if (strcmp(argv[1],"--install")==0) {
       ret = install_pack(argc,argv,data);
+    }
+    else {
+      ret = gui_status(argc,argv,data);
     }
   }
   else {
