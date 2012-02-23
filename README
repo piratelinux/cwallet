@@ -62,6 +62,8 @@ Options for command line version:
 
 -o OUTPUT_FILE (file to save the pdf with QR encoding, defaults to WORKING_DIRECTORY/ADDRESS.pdf)
 
+-t ADDRESS_TYPE (Integer specifying type of address encoding. For example, Bitcoin uses 0)
+
 Example:
 
 ./cwallet -qa 1PkQCQmcyHR3gEPoBVLEchkVRYr5928Ko5
