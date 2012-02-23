@@ -159,14 +159,14 @@ int privkey_to_bc_format(const unsigned char * key, size_t n, unsigned char * pu
 
 }
 
-int pubkey_to_bc_format(const unsigned char * key, size_t n, char * result) {
+int pubkey_to_bc_format(const unsigned char * key, size_t n, char * result, int type) {
 
   unsigned char * hash1 = malloc(32);
   SHA256(key,n,hash1);
   unsigned char * hash2 = malloc(20);
   RIPEMD160(hash1,32,hash2);
   unsigned char * vh160 = malloc(21);
-  *vh160 = 0;
+  *vh160 = type;
   memcpy(vh160+1,hash2,20);
   unsigned char * hash3 = malloc(32);
   SHA256(vh160,21,hash3);

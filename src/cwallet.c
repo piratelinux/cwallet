@@ -10,16 +10,18 @@ int main(int argc, char ** argv) {
   int aflag = 0;
   int qflag = 0;
   int oflag = 0;
+  int tflag = 0;
   char * wvalue = 0;
   char * dvalue = 0;
   char * avalue = 0;
   char * ovalue = 0;
+  char * tvalue = 0;
   int index;
   int c;
      
   opterr = 0;
 
-  while ((c = getopt (argc, argv, "w:d:a:qo:")) != -1) {
+  while ((c = getopt (argc, argv, "w:d:a:qo:t:")) != -1) {
     switch (c) {
       case 'w':
 	wflag = 1;
@@ -39,6 +41,10 @@ int main(int argc, char ** argv) {
       case 'o':
 	oflag = 1;
 	ovalue = optarg;
+	break;
+      case 't':
+	tflag = 1;
+	tvalue = optarg;
 	break;
       case '?':
 	if ((optopt == 'w') || (optopt == 'd') || (optopt == 'a'))
@@ -139,7 +145,16 @@ int main(int argc, char ** argv) {
     
     ret2 = 0;
 
-    ret2 = pubkey_to_bc_format(pubkey,publen,pubkey_bc);
+    int tvaluei = 0;
+
+    if (tflag==0) {
+      tvaluei=0;
+    }
+    else {
+      tvaluei=atoi(tvalue);
+    }
+
+    ret2 = pubkey_to_bc_format(pubkey,publen,pubkey_bc,tvaluei);
 
     char * bcaddress = pubkey_bc+ret2;
 
