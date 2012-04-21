@@ -131,7 +131,7 @@ int main(int argc, char ** argv) {
 
     int publen = curchar;
 
-    if (publen != 65) {
+    if ((publen != 65) && (publen != 33)) {
       printf("UNFAMILIAR-PUBLIC-KEY\n");
       continue;
     }
@@ -167,12 +167,18 @@ int main(int argc, char ** argv) {
     pcurchar = data.data;
     memcpy(&curchar,pcurchar,1);
 
-    if (curchar != 253) {
+    if ((curchar != 253) && (curchar != 214)) {
       printf("UNFAMILIAR-PRIVATE-KEY\n");
       continue;
     }
 
-    pcurchar += 11;
+
+    if (curchar == 253) {
+      pcurchar += 11;
+    }
+    else {
+      pcurchar += 8;
+    }
 
     int privlen = 32;
 

@@ -42,7 +42,12 @@ int priv_to_pub(const unsigned char * priv, size_t n, size_t m, unsigned char **
   EC_POINT * pub_key = EC_POINT_new(group);
   BN_CTX * ctx = BN_CTX_new();
   EC_POINT_mul(group, pub_key, privbn, 0, 0, ctx);
-  EC_POINT_point2oct(group,pub_key,POINT_CONVERSION_UNCOMPRESSED,*result,m,ctx);
+  if (m == 65) {
+    EC_POINT_point2oct(group,pub_key,POINT_CONVERSION_UNCOMPRESSED,*result,m,ctx);
+  }
+  else {
+    EC_POINT_point2oct(group,pub_key,POINT_CONVERSION_COMPRESSED,*result,m,ctx);
+  }
   EC_POINT_free(pub_key);
   BN_CTX_free(ctx);
 
