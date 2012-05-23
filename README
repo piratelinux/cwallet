@@ -20,7 +20,7 @@ Version: 0.1
 
 Dependencies:
 
-- libgtk2.0-dev
+- libgtk2.0-dev (only for gui version)
 - libdb4.8-dev (May need to manually change this if your wallet is created with a different version)
 - libssl-dev
 - qrencode
@@ -44,7 +44,7 @@ To run cwallet:
 cd src
 ./cwallet
 
-To run cwaller-gui:
+To run cwallet-gui:
 
 (make sure both cwallet and cwallet-gui are compiled)
 cd src
