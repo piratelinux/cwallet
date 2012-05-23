@@ -147,20 +147,28 @@ int privkey_to_bc_format(const unsigned char * key, size_t n, unsigned char * pu
 
   free(pubcheck);
 
-  unsigned char * keyext = malloc(n+1);
+  int n_ext = n+1;
+  if (m != 65) {
+    n_ext = n+2;
+  }
+
+  unsigned char * keyext = malloc(n_ext);
   *keyext = 128;
   memcpy(keyext+1,key,n);
+  if (m != 65) {
+    *(keyext+n+1) = 1;
+  }
   unsigned char * hash1 = malloc(32);
-  SHA256(keyext,n+1,hash1);
+  SHA256(keyext,n_ext,hash1);
   unsigned char * hash2 = malloc(32);
   SHA256(hash1,32,hash2);
-  unsigned char * addr = malloc(n+5);
-  memcpy(addr,keyext,n+1);
-  memcpy(addr+n+1,hash2,4);
+  unsigned char * addr = malloc(n_ext+4);
+  memcpy(addr,keyext,n_ext);
+  memcpy(addr+n_ext,hash2,4);
   free(keyext);
   free(hash1);
   free(hash2);
-  return(uchar_to_b58(addr,n+5,51,result));
+  return(uchar_to_b58(addr,n_ext+4,52,result));
 
 }
 
