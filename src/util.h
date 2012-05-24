@@ -6,6 +6,20 @@
 #include <openssl/ec.h>
 #include <openssl/obj_mac.h>
 
+const char * b58chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+int indexof(char c, const char * str) {
+  int i=0;
+  while(*str != '\0') {
+    if (*str == c) {
+      return(i);
+    }
+    i++;
+    str++;
+  }
+  return(-1);
+}
+
 int priv_to_pub(const unsigned char * priv, size_t n, size_t m, unsigned char ** result) {
 
   int ret = 0;
@@ -55,9 +69,74 @@ int priv_to_pub(const unsigned char * priv, size_t n, size_t m, unsigned char **
 
 }
 
-int uchar_to_b58(unsigned char * uchar, size_t n, size_t nr, char * result) {
+int b58_to_uchar(unsigned char * result, size_t nr, char * b58, size_t n) {
 
-  const char * b58chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+  BIGNUM * lval = 0;
+  BN_dec2bn(&lval,"0");
+  BIGNUM * pow58 = 0;
+  BN_dec2bn(&pow58,"1");
+  BIGNUM * one58 = 0;
+  BN_dec2bn(&one58,"58");
+
+  int i = 0;
+  const unsigned char * addri = b58 + n - 1;
+  for (i=0; i<n; i++) {
+    BIGNUM * addribn = 0;
+    char * addristr = malloc(4);
+    sprintf(addristr,"%d",indexof(*addri,b58chars));
+    BN_dec2bn(&addribn,addristr);
+    BN_CTX * ctx = BN_CTX_new();
+    BN_mul(addribn, pow58, addribn, ctx);
+    BN_add(lval,lval,addribn);
+    BN_mul(pow58, pow58, one58, ctx);
+    BN_free(addribn);
+    if (addristr != 0) {
+      free(addristr);
+    }
+    BN_CTX_free(ctx);
+    addri--;
+  }
+
+  unsigned char * addrb256i = result + nr;
+  *addrb256i = '\0';
+  addrb256i--;
+
+  BIGNUM * one256 = 0;
+  BN_dec2bn(&one256,"256");
+
+  int offset = nr;
+  while (BN_cmp(lval,one256) >= 0) {
+    BN_CTX * ctx = BN_CTX_new();
+    BIGNUM * lvalmod256 = BN_new();
+    BN_div(lval, lvalmod256, lval, one256, ctx);
+    int lvalmod256int = atoi(BN_bn2dec(lvalmod256));
+    *addrb256i = lvalmod256int;
+    addrb256i--;
+    BN_free(lvalmod256);
+    BN_CTX_free(ctx);
+    offset--;
+  }
+  int lvalint = atoi(BN_bn2dec(lval));
+  *addrb256i = lvalint;
+  offset--;
+
+  addri = b58;
+  for (i=0; i<n; i++) {
+    if (*addri == '1') {
+      addrb256i--;
+      *addrb256i = 0;
+      offset--;
+      addri++;
+    }
+    else {
+      break;
+    }
+  }
+
+  return(offset);
+}
+
+int uchar_to_b58(unsigned char * uchar, size_t n, size_t nr, char * result) {
 
   BIGNUM * lval = 0;
   BN_dec2bn(&lval,"0");
@@ -121,9 +200,23 @@ int uchar_to_b58(unsigned char * uchar, size_t n, size_t nr, char * result) {
     }
   }
 
-  free(uchar);
-  return(offset);
+  //check reverse
+  unsigned char * result_uchar = (unsigned char *)malloc(n);
+  int ret = b58_to_uchar(result_uchar,n,result,nr);
+  addri = uchar;
+  const unsigned char * addri_chk = result_uchar+ret;
+  for (i=0; i<n-ret; i++) {
+    if (*addri_chk != *addri) {
+      printf("(ERROR)");
+      return(-1);
+    }
+    addri++;
+    addri_chk++;
+  }
 
+  free(uchar);
+
+  return(offset);
 }
 
 int privkey_to_bc_format(const unsigned char * key, size_t n, unsigned char * pubkey, size_t m, char * result) {
@@ -138,7 +231,7 @@ int privkey_to_bc_format(const unsigned char * key, size_t n, unsigned char * pu
   unsigned char * pubchecki = pubcheck;
   for (i=0; i<m; i++) {
     if (*pubkeyi != * pubchecki) {
-      printf("INVALID-KEY");
+      printf("(INVALID KEY)");
       return(-1);
     }
     pubkeyi++;
