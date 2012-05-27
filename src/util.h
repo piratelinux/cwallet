@@ -139,10 +139,6 @@ int b58_to_uchar(unsigned char * result, size_t nr, char * b58, size_t n) {
     }
   }
 
-  if (offset > 0) {
-    printf("offset b58 to uchar: %d\n",offset);
-  }
-
   BN_free(lval);
   BN_free(pow58);
   BN_free(one256);
@@ -221,9 +217,6 @@ int uchar_to_b58(unsigned char * uchar, size_t n, size_t nr, char * result) {
 
   //check reverse
   unsigned char * result_uchar = (unsigned char *)malloc(n+1);
-  if (offset > 0) {
-    printf("offset:%d\n",offset);
-  }
   int ret = b58_to_uchar(result_uchar,n,result+offset,nr-offset);
   addri = uchar;
   const unsigned char * addri_chk = result_uchar;
