@@ -23,8 +23,6 @@ int indexof(char c, const char * str) {
 int priv_to_pub(const unsigned char * priv, size_t n, size_t m, unsigned char ** result) {
 
   int ret = 0;
-  BIGNUM * retbn = 0;
-  EC_KEY * retkey = 0;
   int i = 0;
 
   BIGNUM * privbn = 0;
@@ -62,8 +60,13 @@ int priv_to_pub(const unsigned char * priv, size_t n, size_t m, unsigned char **
   else {
     EC_POINT_point2oct(group,pub_key,POINT_CONVERSION_COMPRESSED,*result,m,ctx);
   }
+
+  EC_GROUP_free(group);
   EC_POINT_free(pub_key);
   BN_CTX_free(ctx);
+  BN_free(privbn);
+  BN_free(pow256);
+  BN_free(one256);
 
   return(0);
 
@@ -109,14 +112,17 @@ int b58_to_uchar(unsigned char * result, size_t nr, char * b58, size_t n) {
     BN_CTX * ctx = BN_CTX_new();
     BIGNUM * lvalmod256 = BN_new();
     BN_div(lval, lvalmod256, lval, one256, ctx);
-    int lvalmod256int = atoi(BN_bn2dec(lvalmod256));
+    char * lvalmod256_str = BN_bn2dec(lvalmod256);
+    int lvalmod256int = atoi(lvalmod256_str);
     *addrb256i = lvalmod256int;
     addrb256i--;
     BN_free(lvalmod256);
     BN_CTX_free(ctx);
+    free(lvalmod256_str);
     offset--;
   }
-  int lvalint = atoi(BN_bn2dec(lval));
+  char * lval_str = BN_bn2dec(lval);
+  int lvalint = atoi(lval_str);
   *addrb256i = lvalint;
   offset--;
 
@@ -132,6 +138,16 @@ int b58_to_uchar(unsigned char * result, size_t nr, char * b58, size_t n) {
       break;
     }
   }
+
+  if (offset > 0) {
+    printf("offset b58 to uchar: %d\n",offset);
+  }
+
+  BN_free(lval);
+  BN_free(pow58);
+  BN_free(one256);
+  BN_free(one58);
+  free(lval_str);
 
   return(offset);
 }
@@ -176,14 +192,17 @@ int uchar_to_b58(unsigned char * uchar, size_t n, size_t nr, char * result) {
     BN_CTX * ctx = BN_CTX_new();
     BIGNUM * lvalmod58 = BN_new();
     BN_div(lval, lvalmod58, lval, one58, ctx);
-    int lvalmod58int = atoi(BN_bn2dec(lvalmod58));
+    char * lvalmod58_str = BN_bn2dec(lvalmod58);
+    int lvalmod58int = atoi(lvalmod58_str);
     *addrb58i = b58chars[lvalmod58int];
     addrb58i--;
     BN_free(lvalmod58);
     BN_CTX_free(ctx);
+    free(lvalmod58_str);
     offset--;
   }
-  int lvalint = atoi(BN_bn2dec(lval));
+  char * lval_str = BN_bn2dec(lval);
+  int lvalint = atoi(lval_str);
   *addrb58i = b58chars[lvalint];
   offset--;
 
@@ -201,11 +220,14 @@ int uchar_to_b58(unsigned char * uchar, size_t n, size_t nr, char * result) {
   }
 
   //check reverse
-  unsigned char * result_uchar = (unsigned char *)malloc(n);
-  int ret = b58_to_uchar(result_uchar,n,result,nr);
+  unsigned char * result_uchar = (unsigned char *)malloc(n+1);
+  if (offset > 0) {
+    printf("offset:%d\n",offset);
+  }
+  int ret = b58_to_uchar(result_uchar,n,result+offset,nr-offset);
   addri = uchar;
-  const unsigned char * addri_chk = result_uchar+ret;
-  for (i=0; i<n-ret; i++) {
+  const unsigned char * addri_chk = result_uchar;
+  for (i=0; i<n; i++) {
     if (*addri_chk != *addri) {
       printf("(ERROR)");
       return(-1);
@@ -215,6 +237,12 @@ int uchar_to_b58(unsigned char * uchar, size_t n, size_t nr, char * result) {
   }
 
   free(uchar);
+  BN_free(lval);
+  BN_free(pow256);
+  BN_free(one256);
+  BN_free(one58);
+  free(lval_str);
+  free(result_uchar);
 
   return(offset);
 }

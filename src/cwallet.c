@@ -187,7 +187,7 @@ int main(int argc, char ** argv) {
     unsigned char * privkey = malloc(privlen);
     memcpy(privkey,pcurchar,privlen);
 
-    char * privkey_bc = malloc(52);
+    char * privkey_bc = malloc(53);
     
     ret2 = 0;
 
