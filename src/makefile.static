@@ -1,4 +1,4 @@
 all: cwallet
 
 cwallet: cwallet.c util.h
-	 gcc -I$(CURDIR) $(INCLUDES) $(LIBS) -o cwallet cwallet.c -Wl,-Bstatic -ldb-4.8 -lssl -lcrypto -Wl,-Bdynamic -lz -ldl -lpthread
+	 gcc -I$(CURDIR) $(INCLUDES) $(LIBS) -o cwallet cwallet.c -ldb-4.8 -lssl -lcrypto -lz -ldl -lpthread
