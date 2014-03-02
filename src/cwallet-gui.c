@@ -186,12 +186,30 @@ cb_err_watch( GIOChannel   *channel,
 	const gchar * address = gtk_entry_get_text(data->entryaddress);
 	const gchar * outdir = gtk_entry_get_text(data->entryoutdir);
 	gchar * cmd = g_malloc(strlen(address)+strlen(outdir)+40);
-	strcpy(cmd,"evince --presentation '");
-	strcat(cmd,outdir);
-	strcat(cmd,"/");
-	strcat(cmd,address);
-	strcat(cmd,".pdf' &");
+	
+	strcpy(cmd,"hash mupdf");
 	int ret = system(cmd);
+
+	if (ret == 0) {
+	  strcpy(cmd,"mupdf '");
+	  strcat(cmd,outdir);
+	  strcat(cmd,"/");
+	  strcat(cmd,address);
+	  strcat(cmd,".pdf' &");
+	  ret = system(cmd);
+	}
+	else {
+	  strcpy(cmd,"hash evince");
+	  ret = system(cmd);
+	  if (ret == 0) {
+	    strcpy(cmd,"evince --presentation '");
+	    strcat(cmd,outdir);
+	    strcat(cmd,"/");
+	    strcat(cmd,address);
+	    strcat(cmd,".pdf' &");
+	    ret = system(cmd);
+	  }
+	}
 
 	gtk_widget_set_sensitive((GtkWidget *)data->button_enable,TRUE);
 

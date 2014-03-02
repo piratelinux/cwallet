@@ -251,7 +251,7 @@ int privkey_to_bc_format(const unsigned char * key, size_t n, unsigned char * pu
   unsigned char * pubkeyi = pubkey;
   unsigned char * pubchecki = pubcheck;
   for (i=0; i<m; i++) {
-    if (*pubkeyi != * pubchecki) {
+    if (*pubkeyi != *pubchecki) {
       printf("(INVALID KEY)");
       return(-1);
     }
