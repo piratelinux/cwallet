@@ -229,16 +229,16 @@ int main(int argc, char ** argv) {
 	strcat(pngfile,".png");
       }
 
-      strcpy(cmd,"qrencode -s 20 -o \"");
+      strcpy(cmd,"qrencode -o \"");
       strcat(cmd,pngfile);
-      strcat(cmd,"\" \"");
+      strcat(cmd,"\" -s 12 -l H \"");
       strcat(cmd,bcprivkey);
       strcat(cmd,"\"");
       ret2 = system(cmd);
 
       strcpy(cmd,"convert \"");
       strcat(cmd,pngfile);
-      strcat(cmd,"\" -draw \"text 50,20 '");
+      strcat(cmd,"\" -draw \"text 100,25 '");
       strcat(cmd,bcaddress);
       strcat(cmd,"'\" \"");
       strcat(cmd,pngfile);
@@ -247,7 +247,7 @@ int main(int argc, char ** argv) {
 
       strcpy(cmd,"convert \"");
       strcat(cmd,pngfile);
-      strcat(cmd,"\" -draw \"text 50,730 '");
+      strcat(cmd,"\" -draw \"text 100,573 '");
       strcat(cmd,bcprivkey);
       strcat(cmd,"'\" \"");
       strcat(cmd,pngfile);
