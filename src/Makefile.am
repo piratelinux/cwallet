@@ -1,4 +1,5 @@
-bin_PROGRAMS = cwallet-gui
-cwallet_gui_SOURCES = cwallet-gui.c
+bin_PROGRAMS = cwallet cwallet-gui
+cwallet_SOURCES = main.c cwallet.c
+cwallet_gui_SOURCES = main-gui.c cwallet.c
 cwallet_gui_LDADD = $(GTK2_LIBS)
-AM_CPPFLAGS = $(GTK2_CFLAGS) -I$(CURDIR)
+cwallet_gui_CPPFLAGS = $(GTK2_CFLAGS)

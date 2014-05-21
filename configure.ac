@@ -1,14 +1,15 @@
 AC_INIT([cwallet], [1.0], [bug-automake@gnu.org])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_CONFIG_HEADERS([config.h])
 
 PKG_CHECK_MODULES([GTK2],[gtk+-2.0])
 
-#AC_CHECK_HEADERS([db.h] [openssl/bn.h] [openssl/sha.h] [openssl/ripemd.h] [openssl/ec.h] [openssl/obj_mac.h], ,AC_MSG_ERROR([*** Some required headers not found]))
+AC_CHECK_HEADERS([db.h] [openssl/bn.h] [openssl/sha.h] [openssl/ripemd.h] [openssl/ec.h] [openssl/obj_mac.h], ,AC_MSG_ERROR([*** Some required headers not found]))
 
-#AC_CHECK_LIB([db-4.8],[db_create],,AC_MSG_ERROR([*** libdb-4.8 not found]))
-#AC_CHECK_LIB([crypto],[SHA256],,AC_MSG_ERROR([*** libcrypto not found]))
+AC_CHECK_LIB([db-4.8],[db_create],,AC_MSG_ERROR([*** libdb-4.8 not found]))
+AC_CHECK_LIB([crypto],[SHA256],,AC_MSG_ERROR([*** libcrypto not found]))
 
 AC_CHECK_PROG(HAVE_QRENCODE,qrencode,true,false)
 

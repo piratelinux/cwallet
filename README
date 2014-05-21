@@ -1,73 +1,46 @@
-<p xmlns:dct="http://purl.org/dc/terms/" xmlns:vcard="http://www.w3.org/2001/vcard-rdf/3.0#">
-  <a rel="license"
-     href="http://creativecommons.org/publicdomain/zero/1.0/">
-    <img src="http://i.creativecommons.org/p/zero/1.0/80x15.png" style="border-style: none;" alt="CC0" />
-  </a>
-  <br />
-  To the extent possible under law,
-  <a rel="dct:publisher"
-     href="https://github.com/piratelinux/cwallet">
-    <span property="dct:title">Andrew K</span></a>
-  has waived all copyright and related or neighboring rights to
-  <span property="dct:title">Cwallet</span>.
-This work is published from:
-<span property="vcard:Country" datatype="dct:ISO3166"
-      content="CA" about="https://github.com/piratelinux/cwallet">
-  Canada</span>.
-</p>
+This is the README for Cwallet, a no-nonsense Bitcoin paper wallet creator.
+
+The program will output each address and private key in Bitcoin's base58 format. It will also check to make sure that the private key correctly corresponds to the address by performing a multiplication in Elliptic Curve space. When converting between different bases, a reverse conversion is made to verify that the coversion went well. When inputting a private key, its hash oprtion is checked to make sure it correctly corresponds to its content portion. Pdflatex is used create the PDF file as it is a clean and well tested method of creating PDF documents. A passphrase may be given to encrypt the private key with a one-time-pad derived from the passphrase. The program is written in C, the dependencies are minimal, with the core functions contained within less than 1000 lines of code. This makes it very easy to audit Cwallet for correctness and security.
 
 Dependencies:
 
-- libgtk2.0-dev (only for gui version)
-- libdb4.8-dev (May need to manually change this if your wallet is created with a different version)
+- libgtk2.0-dev (for gui version)
+- libdb4.8-dev (You may need to manually change this if your wallet is created with a different version)
 - libssl-dev
 - qrencode
-- convert (ImageMagick)
+- pdflatex (texlive)
 
-To compile cwallet (command line version):
-
-cd src
-(set the INCLUDES and LIBS variables to be used in the makefile)
-export INCLUDES
-export LIBS
-make -f makefile.static
-
-To compile cwallet-gui (graphical version):
+To compile Cwallet:
 
 ./configure
 make
 
-To run cwallet:
+To run the command line version of Cwallet:
 
 cd src
 ./cwallet
 
-To run cwallet-gui:
+To run the graphical version of Cwallet:
 
-(make sure both cwallet and cwallet-gui are compiled)
 cd src
 ./cwallet-gui
 
 Options for command line version:
 
--w WALLET_FILE (defaults to ~/.bitcoin/wallet.dat)
-
--d WORKING_DIRECTORY (defaults to directory the program is called from)
-
--a ADDRESS (if not specified, all addresses are listed)
-
+-w <wallet file> (defaults to ~/.bitcoin/wallet.dat)
+-d <output directory> (defaults to directory the program is called from)
+-a <address> (if not specified, all addresses are listed)
 -q (produce pdf file of private key QR coded)
-
--o OUTPUT_FILE (file to save the pdf with QR encoding, defaults to WORKING_DIRECTORY/ADDRESS.pdf)
-
--t ADDRESS_TYPE (Integer specifying type of address encoding. For example, Bitcoin uses 0)
+-o <output file> (file to save the pdf with QR encoding, defaults to <output directory>/<address>.pdf)
+-t <address type> (Integer specifying type of address prefix code. For example, Bitcoin uses 0, Namecoin uses 52)
+-r (generate a random private key)
+-p <passphrase>
+-k <private key>
+-e (encrypt the private key with the passphrase)
+-u (use uncompressed public keys)
 
 Example:
 
-./cwallet -qa 1PkQCQmcyHR3gEPoBVLEchkVRYr5928Ko5
+./cwallet -rq
 
-Note:
-
-The program will output each address and private key in Bitcoin's base58 format. It will also check to make sure that the private key correctly corresponds to the address by performing a multiplication in Elliptic Curve space.
-
-See http://youtu.be/zZ63A-asD20?hd=1 for a video demo.
+Cwallet is released into the public domain (CC0), so feel to do what you want with it. For more details, see the LICENSE file.
