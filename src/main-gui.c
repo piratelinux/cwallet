@@ -6,8 +6,7 @@
 
 /* The data structure that contains information about graphical events */
 typedef struct _Data Data;
-struct _Data
-{
+struct _Data {
   GtkWindow * window;
 
   GtkHButtonBox * hbuttonbox;
@@ -38,15 +37,13 @@ struct _Data
   gint timeout_id;
   gint timeout_id2;
 
-  gchar * outdir;
   GtkWidget * button_decrypt;
-
 };
 
-static void cb_execute_install(GtkButton *button, Data *data);
-static void cb_execute_reinstall(GtkButton *button, Data *data);
-static void cb_execute_remove(GtkButton *button, Data *data);
-static void cb_execute_update(GtkButton *button, Data *data);
+static void cb_execute_install(GtkButton * button, Data * data);
+static void cb_execute_reinstall(GtkButton * button, Data * data);
+static void cb_execute_remove(GtkButton * button, Data * data);
+static void cb_execute_update(GtkButton * button, Data * data);
 
 /* Get the substring of str starting at index begin and with length len
    str: The string to get the substring of
@@ -188,9 +185,11 @@ static gboolean cb_out_watch(GIOChannel * channel, GIOCondition  cond, Data * da
 	fprintf(stderr,"%s\n",string);
 
 	gtk_widget_set_sensitive((GtkWidget *)data->button_enable,TRUE);
-
       }
       g_free(submessage);
+    }
+    if (string!=0) {
+      g_free(string);
     }
     return(TRUE);
 }
@@ -256,7 +255,6 @@ static void cb_execute(GtkButton * button, Data * data) {
       argv[argc] = 0;
       gtk_widget_set_sensitive((GtkWidget *)data->button_enable,FALSE);
       gtk_label_set_label(data->message, "Generating");
-      data->outdir = strdup(outdir);
     }
 
     gint in, out, err;
@@ -308,13 +306,9 @@ static void cb_execute(GtkButton * button, Data * data) {
 }
 
 /* Set action to install and call for it to execute, once the corresponding event occurs */
-static void cb_execute_install(GtkButton *button,
-				Data      *data)
-{
- 
+static void cb_execute_install(GtkButton * button, Data * data) {
   data->action = strdup("install");
   cb_execute(button,data);
-
 }
 
 /* Perform the install action, i.e. call the qrencode function with the given parameters.
@@ -593,6 +587,7 @@ int main(int argc, char ** argv) {
   g_free(data->curpath);
   g_free(data->homedir);
   g_free(data->maindir);
+  g_free(data->processpath);
   g_free(data);
 
   return(0);

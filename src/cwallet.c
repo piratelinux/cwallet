@@ -4,15 +4,34 @@ int publen = 33;
 const int privlen = 32;
 
 const char * b58chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-const char * b64chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz -";
+const char * b64chars = " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-";
 
-int qrencode (char * bcaddress, char * bcprivkey, char * dvalue, char * ovalue, char * pvalue, unsigned char eflag) {
+int fill_latex_lines (int maxncharforline, char * source, char * target, int startncharforline) {
+  char * target_it = target;
+  char * source_it = source;
+  int ncharforline = startncharforline;
+  while(*source_it != '\0') {
+    if (ncharforline >= maxncharforline) {
+      memcpy(target_it,"\\\\",2);
+      ncharforline = 0;
+      target_it += 2;
+    }
+    *target_it = *source_it;
+    source_it++;
+    target_it++;
+    ncharforline++;
+  }
+  *target_it = '\0';
+  return(ncharforline);
+}
+
+int qrencode (char * bc_address, char * bc_privkey, char * dvalue, char * ovalue, char * pvalue, unsigned char eflag) {
 
   int ret = 0;
   char * cmd = malloc(1000);
 
   if (dvalue != 0) {
-    if (strlen(dvalue) > 450) {
+    if (strlen(dvalue) > 950) {
       cmd = malloc(strlen(dvalue)+50);
     }
     strcpy(cmd,"mkdir -p '");
@@ -36,21 +55,11 @@ int qrencode (char * bcaddress, char * bcprivkey, char * dvalue, char * ovalue, 
   if (ret != 0) {
     return(ret);
   }
-
-  char * pdffile = 0;
-  if (ovalue != 0) {
-    pdffile = ovalue;
-  }
-  else {
-    pdffile = (char *)malloc(50);
-    strcpy(pdffile,bcaddress);
-    strcat(pdffile,".pdf");
-  }
   
   strcpy(cmd,"qrencode -o '");
-  strcat(cmd,bcaddress);
+  strcat(cmd,bc_address);
   strcat(cmd,".png' -s 12 -l H '");
-  strcat(cmd,bcprivkey);
+  strcat(cmd,bc_privkey);
   strcat(cmd,"'");
   ret = system(cmd);
   if (ret != 0) {
@@ -58,9 +67,8 @@ int qrencode (char * bcaddress, char * bcprivkey, char * dvalue, char * ovalue, 
   }
 
   if ((pvalue != 0) && (eflag == 1)) {
-
     strcpy(cmd,"qrencode -o '");
-    strcat(cmd,bcprivkey);
+    strcat(cmd,bc_privkey);
     strcat(cmd,".png' -s 3 -l H '");
     strcat(cmd,pvalue);
     strcat(cmd,"'");
@@ -70,24 +78,26 @@ int qrencode (char * bcaddress, char * bcprivkey, char * dvalue, char * ovalue, 
     }
   }
   
-  strcpy(cmd,"echo '\\documentclass{article}\\usepackage{graphicx}\\usepackage[top=1in, bottom=1in, left=0in, right=0in]{geometry}\\begin{document}\\pagenumbering{gobble}{\\centering ");
-  strcat(cmd,bcaddress);
+  strcpy(cmd,"echo '\\documentclass{article}\\usepackage{graphicx}\\usepackage[top=1in, bottom=1in, left=0in, right=0in]{geometry}\\usepackage{multicol}\\begin{document}\\pagenumbering{gobble}{\\centering ");
+  strcat(cmd,bc_address);
   strcat(cmd,"\\\\\\includegraphics{");
-  strcat(cmd,bcaddress);
+  strcat(cmd,bc_address);
   strcat(cmd,".png}\\\\");
-  strcat(cmd,bcprivkey);
+  strcat(cmd,bc_privkey);
+  strcat(cmd,"\\par}");
   if ((pvalue != 0) && (eflag ==1)) {
-    strcat(cmd,"\\par}\\newpage{\\centering ");
-    strcat(cmd,bcaddress);
-    strcat(cmd,"\\\\");
-    strcat(cmd,bcprivkey);
-    strcat(cmd,"\\\\\\includegraphics{");
-    strcat(cmd,bcprivkey);
-    strcat(cmd,".png}\\\\");
-    strcat(cmd,pvalue);
+    strcat(cmd,"\\newpage\\begin{multicols}{2}{\\raggedleft\\texttt{~\\\\");
+    ret = fill_latex_lines(15,bc_address,cmd+strlen(cmd),0);
+    strcat(cmd,".");
+    ret = fill_latex_lines(15,bc_privkey,cmd+strlen(cmd),ret+1);
+    strcat(cmd,".");
+    ret = fill_latex_lines(15,pvalue,cmd+strlen(cmd),ret+1);
+    strcat(cmd,"}\\par}\\columnbreak{\\raggedright\\includegraphics{");
+    strcat(cmd,bc_privkey);
+    strcat(cmd,".png}\\par}\\end{multicols}");
   }
-  strcat(cmd,"\\par}\\end{document}' > ");
-  strcat(cmd,bcaddress);
+  strcat(cmd,"\\end{document}' > ");
+  strcat(cmd,bc_address);
   strcat(cmd,".tex");
   ret = system(cmd);
   if (ret != 0) {
@@ -95,7 +105,7 @@ int qrencode (char * bcaddress, char * bcprivkey, char * dvalue, char * ovalue, 
   }
 
   strcpy(cmd,"pdflatex ");
-  strcat(cmd,bcaddress);
+  strcat(cmd,bc_address);
   strcat(cmd,".tex >> /dev/null 2>> /dev/null");
   ret = system(cmd);
   if (ret != 0) {
@@ -103,7 +113,7 @@ int qrencode (char * bcaddress, char * bcprivkey, char * dvalue, char * ovalue, 
   }
   
   char * oldname = (char *)malloc(50);
-  strcpy(oldname,bcaddress);
+  strcpy(oldname,bc_address);
   strcat(oldname,".pdf");
   char * newname = (char *)malloc(50);
   strcpy(newname,"../");
@@ -152,12 +162,12 @@ int generate_key(unsigned char qflag, unsigned char rflag, unsigned char eflag, 
   int ret = 0;
   
   int i = 0;
-  unsigned char tvaluei = 0;
+  unsigned char tvalue_uchar = 0;
   if (tvalue==0) {
-    tvaluei=0;
+    tvalue_uchar=0;
   }
   else {
-    tvaluei=(unsigned char)(atoi(tvalue));
+    tvalue_uchar=(unsigned char)(atoi(tvalue));
   }
   if (uflag==1) {
     publen = 65;
@@ -180,17 +190,31 @@ int generate_key(unsigned char qflag, unsigned char rflag, unsigned char eflag, 
       randomDataLen += res;
     }
     close(randomData);
-    
-    unsigned char * pubkey = malloc(publen);
-    ret = priv_to_pub(privkey,privlen,publen,&pubkey);
-    char * pubkey_bc = malloc(35);
-    ret = pubkey_to_bc_format(pubkey,publen,pubkey_bc,tvaluei);
-    if (ret==-1) {
-      strcpy(result[0],"Cannot convert public key to address\n");
-      return(1);
+
+    /* Get the address twice and compare */
+    char ** bc_address = (char **)malloc(sizeof(char *)*2);
+    char ** pubkey_bc = (char **)malloc(sizeof(char *)*2);
+    for (i=0; i<2; i++) {
+      unsigned char * pubkey = malloc(publen);
+      ret = priv_to_pub(pubkey,publen,privkey,privlen);
+      pubkey_bc[i] = malloc(35);
+      ret = pubkey_to_bc_format(pubkey_bc[i],pubkey,publen,tvalue_uchar);
+      if (ret==-1) {
+	strcpy(result[0],"Cannot convert public key to address\n");
+	return(1);
+      }
+      bc_address[i] = pubkey_bc[i] + ret;
+      free(pubkey);
     }
-    char * bcaddress = pubkey_bc+ret;
-    strcpy(result[0],bcaddress);
+    i = 0;
+    do {
+      if (bc_address[0][i] != bc_address[1][i]) {
+        strcpy(result[0],"Address generations inconsistent\n");
+        return(1);
+      }
+      i++;
+    } while (bc_address[0][i] != '\0');
+    strcpy(result[0],bc_address[0]);
 
     if (pvalue != 0) {
       
@@ -207,13 +231,17 @@ int generate_key(unsigned char qflag, unsigned char rflag, unsigned char eflag, 
       }
 
       unsigned char * password_uchar = (unsigned char *)malloc(privlen+1);
-      ret = b64_to_uchar(pvalue,strlen(pvalue),password_uchar,privlen);
+      ret = b64_to_uchar(password_uchar,privlen,pvalue,strlen(pvalue),1);
+      if (ret < 0) {
+	strcpy(result[0],"Cannot parse passphrase\n");
+	return(1);
+      }
 
       unsigned char * privkey_encrypted= (unsigned char *)malloc(privlen);
-      ret = add_uchars(privkey,password_uchar,privlen,privkey_encrypted);
+      ret = add_uchars(privkey_encrypted,privkey,password_uchar,privlen);
 
       unsigned char * privkey_decrypted = (unsigned char *)malloc(privlen);
-      ret = subtract_uchars(privkey_encrypted,password_uchar,privlen,privkey_decrypted);
+      ret = subtract_uchars(privkey_decrypted,privkey_encrypted,password_uchar,privlen);
 
       for (i=0;i<privlen;i++) {
 	if (privkey_decrypted[i] != privkey[i]) {
@@ -221,39 +249,65 @@ int generate_key(unsigned char qflag, unsigned char rflag, unsigned char eflag, 
 	  return(1);
 	}
       }
-
+      free(privkey_decrypted);
       free(password_uchar);
       free(privkey);
       privkey = privkey_encrypted;
     }
 
-    char * privkey_bc = malloc(53);
-    ret = privkey_to_bc_format(privkey,privlen,pubkey,publen,privkey_bc,0);
-    if (ret==-1) {
-      strcpy(result[0],"Cannot convert private key to the Bitcoin format\n");
-      return(1);
-    }
-    else if (ret==-2) {
-      strcpy(result[0],"Private key does not match public key\n");
-      return(1);
-    }
-    char * bcprivkey = privkey_bc + ret;
-    strcpy(result[1],bcprivkey);
+    /* Get the private key twice and compare */
+    char ** bc_privkey = (char **)malloc(sizeof(char *)*2);
+    char ** privkey_bc = (char **)malloc(sizeof(char *)*2);
+    for (i=0; i<2; i++) {
+      privkey_bc[i] = (char *)malloc(53);
+      ret = privkey_to_bc_format(privkey_bc[i],privkey,privlen,0,0);
+      if (ret==-1) {
+	strcpy(result[0],"Cannot convert private key to the Bitcoin format\n");
+	return(1);
+      }
+      else if (ret==-2) {
+	strcpy(result[0],"Private key does not match public key\n");
+	return(1);
+      }
+      bc_privkey[i] = privkey_bc[i] + ret;
+    }    i = 0;
+    do {
+      if (bc_privkey[0][i] != bc_privkey[1][i]) {
+        strcpy(result[0],"Private key generations inconsistent\n");
+        return(1);
+      }
+      i++;
+    } while (bc_privkey[0][i] != '\0');
+    strcpy(result[1],bc_privkey[0]);
 
     if (qflag == 1) {
-      ret = qrencode(bcaddress,bcprivkey,dvalue,ovalue,pvalue,eflag);
+      ret = qrencode(bc_address[0],bc_privkey[0],dvalue,ovalue,pvalue,eflag);
       if (ret!=0) {
 	strcpy(result[0],"Cannot qr-encode\n");
 	return(1);
       }
     }
+
+    free(privkey);
+    free(pubkey_bc[0]);
+    free(pubkey_bc[1]);
+    free(pubkey_bc);
+    free(privkey_bc[0]);
+    free(privkey_bc[1]);
+    free(privkey_bc);
+    free(bc_address);
+    free(bc_privkey);
   }
 
   else if (kvalue != 0) {
     
-    unsigned char * privkey_1 = malloc(privlen+7);
-    int privkey_offset = b58_to_uchar(privkey_1, privlen+6, kvalue, strlen(kvalue));
-    privkey_1 += privkey_offset;
+    unsigned char * privkey_1_full = malloc(privlen+7);
+    int privkey_offset = b58_to_uchar(privkey_1_full,privlen+6,kvalue,strlen(kvalue),1);
+    if (privkey_offset < 0) {
+      strcpy(result[0],"Cannot parse private key\n");
+      return(1);
+    }
+    unsigned char * privkey_1 = privkey_1_full + privkey_offset;
 
     unsigned char * hash1 = malloc(32);
     SHA256(privkey_1,privlen+1+1-privkey_offset,hash1);
@@ -276,13 +330,34 @@ int generate_key(unsigned char qflag, unsigned char rflag, unsigned char eflag, 
     else {
       privkey_2 = (unsigned char *)malloc(privlen);
       unsigned char * password_uchar = (unsigned char *)malloc(privlen+1);
-      ret = b64_to_uchar(pvalue,strlen(pvalue),password_uchar,privlen);
+      ret = b64_to_uchar(password_uchar,privlen,pvalue,strlen(pvalue),1);
+      if (ret < 0) {
+	strcpy(result[0],"Cannot parse passphrase\n");
+        return(1);
+      }
+      unsigned char * privkey_1_check = (unsigned char *)malloc(privlen);
       if (eflag == 1) {
-	ret = add_uchars(privkey_1,password_uchar,privlen,privkey_2);
+	ret = add_uchars(privkey_2,privkey_1,password_uchar,privlen);
+	ret = subtract_uchars(privkey_1_check,privkey_2,password_uchar,privlen);
+	for (i=0; i<privlen; i++) {
+	  if (privkey_1[i] != privkey_1_check[i]) {
+	    strcpy(result[0],"Cannot add passphrase to private key\n");
+	    return(1);
+	  }
+	}
       }
       else {
-	ret = subtract_uchars(privkey_1,password_uchar,privlen,privkey_2);
+	ret = subtract_uchars(privkey_2,privkey_1,password_uchar,privlen);
+	ret = add_uchars(privkey_1_check,privkey_2,password_uchar,privlen);
+	for (i=0; i<privlen; i++) {
+          if (privkey_1[i] != privkey_1_check[i]) {
+            strcpy(result[0],"Cannot subtract passphrase from private key\n");
+            return(1);
+          }
+        }
       }
+      free(privkey_1_check);
+      free(password_uchar);
     }
 
     if (privkey_offset == 1) {
@@ -292,48 +367,87 @@ int generate_key(unsigned char qflag, unsigned char rflag, unsigned char eflag, 
       publen = 33;
     }
 
-    unsigned char * pubkey = malloc(publen);
-    if (eflag == 1) {
-      ret = priv_to_pub(privkey_1,privlen,publen,&pubkey);
+    /* Get the address twice and compare */
+    char ** bc_address = (char **)malloc(sizeof(char *)*2);
+    char ** pubkey_bc = (char **)malloc(sizeof(char *)*2);
+    for (i=0; i<2; i++) {
+      unsigned char * pubkey = malloc(publen);
+      if (eflag == 1) {
+	ret = priv_to_pub(pubkey,publen,privkey_1,privlen);
+      }
+      else {
+	ret = priv_to_pub(pubkey,publen,privkey_2,privlen);
+      }
+      pubkey_bc[i] = malloc(35);
+      ret = pubkey_to_bc_format(pubkey_bc[i],pubkey,publen,tvalue_uchar);
+      if (ret==-1) {
+	strcpy(result[0],"Cannot convert public key to address\n");
+	return(1);
+      }
+      bc_address[i] = pubkey_bc[i] + ret;
+      free(pubkey);
     }
-    else {
-      ret = priv_to_pub(privkey_2,privlen,publen,&pubkey);
-    }
-    char * pubkey_bc = malloc(35);
-    ret = pubkey_to_bc_format(pubkey,publen,pubkey_bc,tvaluei);
-    if (ret==-1) {
-      strcpy(result[0],"Cannot convert public key to address\n");
-      return(1);
-    }
-    char * bcaddress = pubkey_bc+ret;
-    strcpy(result[0],bcaddress);
+    i = 0;
+    do {
+      if (bc_address[0][i] != bc_address[1][i]) {
+	strcpy(result[0],"Address generations inconsistent\n");
+	return(1);
+      }
+      i++;
+    } while (bc_address[0][i] != '\0');
+    strcpy(result[0],bc_address[0]);
 
-    char * privkey_bc = malloc(53);
-    ret = privkey_to_bc_format(privkey_2,privlen,pubkey,publen,privkey_bc,0);
-    if (ret==-1) {
-      strcpy(result[0],"Cannot convert private key to the Bitcoin format\n");
-      return(1);
+    /* Get the private key twice and compare */
+    char ** bc_privkey = (char **)malloc(sizeof(char *)*2);
+    char ** privkey_bc = (char **)malloc(sizeof(char *)*2);
+    for (i=0; i<2; i++) {
+      privkey_bc[i] = (char *)malloc(53);
+      ret = privkey_to_bc_format(privkey_bc[i],privkey_2,privlen,0,0);
+      if (ret==-1) {
+	strcpy(result[0],"Cannot convert private key to the Bitcoin format\n");
+	return(1);
+      }
+      else if (ret==-2) {
+	strcpy(result[0],"Private key does not match public key\n");
+	return(1);
+      }
+      bc_privkey[i] = privkey_bc[i] + ret;
     }
-    else if (ret==-2) {
-      strcpy(result[0],"Private key does not match public key\n");
-      return(1);
-    }
-    char * bcprivkey = privkey_bc + ret;
-    strcpy(result[1],bcprivkey);
+    do {
+      if (bc_privkey[0][i] != bc_privkey[1][i]) {
+        strcpy(result[0],"Private key generations inconsistent\n");
+        return(1);
+      }
+      i++;
+    } while (bc_privkey[0][i] != '\0');
+    strcpy(result[1],bc_privkey[0]);
 
     if (qflag == 1) {
-      ret = qrencode(bcaddress,bcprivkey,dvalue,ovalue,pvalue,eflag);
+      ret = qrencode(bc_address[0],bc_privkey[0],dvalue,ovalue,pvalue,eflag);
       if (ret!=0) {
         strcpy(result[0],"Cannot qr-encode\n");
         return(1);
       }
     }
+
+    free(privkey_1_full);
+    free(privkey_2);
+    free(hash1);
+    free(hash2);
+    free(pubkey_bc[0]);
+    free(pubkey_bc[1]);
+    free(pubkey_bc);
+    free(privkey_bc[0]);
+    free(privkey_bc[1]);
+    free(privkey_bc);
+    free(bc_address);
+    free(bc_privkey);
   }
-  return(0);
   
+  return(0);
 }
 
-int priv_to_pub(const unsigned char * priv, size_t n, size_t m, unsigned char ** result) {
+int priv_to_pub(unsigned char * result, size_t m, const unsigned char * priv, size_t n) {
 
   int ret = 0;
   int i = 0;
@@ -345,22 +459,22 @@ int priv_to_pub(const unsigned char * priv, size_t n, size_t m, unsigned char **
   BIGNUM * one256 = 0;
   BN_dec2bn(&one256,"256");
 
-  const unsigned char * addri = priv + n - 1;
+  const unsigned char * input_it = priv + n - 1;
   for (i=0; i<n; i++) {
-    BIGNUM * addribn = 0;
-    char * addristr = malloc(4);
-    sprintf(addristr,"%d",*addri);
-    BN_dec2bn(&addribn,addristr);
+    BIGNUM * input_bn = 0;
+    char * input_str = malloc(4);
+    sprintf(input_str,"%d",*input_it);
+    BN_dec2bn(&input_bn,input_str);
     BN_CTX * ctx = BN_CTX_new();
-    BN_mul(addribn, pow256, addribn, ctx);
-    BN_add(privbn,privbn,addribn);
+    BN_mul(input_bn, pow256, input_bn, ctx);
+    BN_add(privbn,privbn,input_bn);
     BN_mul(pow256, pow256, one256, ctx);
-    BN_free(addribn);
-    if (addristr != 0) {
-      free(addristr);
+    BN_free(input_bn);
+    if (input_str != 0) {
+      free(input_str);
     }
     BN_CTX_free(ctx);
-    addri--;
+    input_it--;
   }
 
   EC_GROUP * group = EC_GROUP_new_by_curve_name(NID_secp256k1);
@@ -368,10 +482,10 @@ int priv_to_pub(const unsigned char * priv, size_t n, size_t m, unsigned char **
   BN_CTX * ctx = BN_CTX_new();
   EC_POINT_mul(group, pub_key, privbn, 0, 0, ctx);
   if (m == 65) {
-    EC_POINT_point2oct(group,pub_key,POINT_CONVERSION_UNCOMPRESSED,*result,m,ctx);
+    EC_POINT_point2oct(group,pub_key,POINT_CONVERSION_UNCOMPRESSED,result,m,ctx);
   }
   else {
-    EC_POINT_point2oct(group,pub_key,POINT_CONVERSION_COMPRESSED,*result,m,ctx);
+    EC_POINT_point2oct(group,pub_key,POINT_CONVERSION_COMPRESSED,result,m,ctx);
   }
 
   EC_GROUP_free(group);
@@ -382,259 +496,386 @@ int priv_to_pub(const unsigned char * priv, size_t n, size_t m, unsigned char **
   BN_free(one256);
 
   return(0);
-
 }
 
-int b58_to_uchar(unsigned char * result, size_t nr, char * b58, size_t n) {
+int b58_to_uchar(unsigned char * result, size_t m, const char * b58, size_t n, unsigned char check_reverse) {
 
-  BIGNUM * lval = 0;
-  BN_dec2bn(&lval,"0");
+  BIGNUM * tot_bn = 0;
+  BN_dec2bn(&tot_bn,"0");
   BIGNUM * pow58 = 0;
   BN_dec2bn(&pow58,"1");
   BIGNUM * one58 = 0;
   BN_dec2bn(&one58,"58");
 
   int i = 0;
-  const unsigned char * addri = b58 + n - 1;
+  const unsigned char * input_it = b58 + n - 1;
   for (i=0; i<n; i++) {
-    BIGNUM * addribn = 0;
-    char * addristr = malloc(4);
-    sprintf(addristr,"%d",indexof(*addri,b58chars));
-    BN_dec2bn(&addribn,addristr);
+    BIGNUM * input_bn = 0;
+    char * input_str = malloc(4);
+    sprintf(input_str,"%d",indexof(*input_it,b58chars));
+    BN_dec2bn(&input_bn,input_str);
     BN_CTX * ctx = BN_CTX_new();
-    BN_mul(addribn, pow58, addribn, ctx);
-    BN_add(lval,lval,addribn);
-    BN_mul(pow58, pow58, one58, ctx);
-    BN_free(addribn);
-    if (addristr != 0) {
-      free(addristr);
+    BN_mul(input_bn,pow58,input_bn,ctx);
+    BN_add(tot_bn,tot_bn,input_bn);
+    BN_mul(pow58,pow58,one58,ctx);
+    BN_free(input_bn);
+    if (input_str != 0) {
+      free(input_str);
     }
     BN_CTX_free(ctx);
-    addri--;
+    input_it--;
   }
 
-  unsigned char * addrb256i = result + nr;
-  *addrb256i = '\0';
-  addrb256i--;
+  unsigned char * output_it = result + m;
+  *output_it = '\0';
+  output_it--;
 
   BIGNUM * one256 = 0;
   BN_dec2bn(&one256,"256");
 
-  int offset = nr;
-  while (BN_cmp(lval,one256) >= 0) {
+  int offset = m;
+  while (BN_cmp(tot_bn,one256) >= 0) {
     BN_CTX * ctx = BN_CTX_new();
-    BIGNUM * lvalmod256 = BN_new();
-    BN_div(lval, lvalmod256, lval, one256, ctx);
-    char * lvalmod256_str = BN_bn2dec(lvalmod256);
-    int lvalmod256int = atoi(lvalmod256_str);
-    *addrb256i = lvalmod256int;
-    addrb256i--;
-    BN_free(lvalmod256);
+    BIGNUM * tot_mod_256 = BN_new();
+    BN_div(tot_bn,tot_mod_256,tot_bn,one256,ctx);
+    char * tot_mod_256_str = BN_bn2dec(tot_mod_256);
+    *output_it = atoi(tot_mod_256_str);
+    BN_free(tot_mod_256);
     BN_CTX_free(ctx);
-    free(lvalmod256_str);
+    free(tot_mod_256_str);
+    output_it--;
     offset--;
   }
-  char * lval_str = BN_bn2dec(lval);
-  int lvalint = atoi(lval_str);
-  *addrb256i = lvalint;
+  char * tot_str = BN_bn2dec(tot_bn);
+  *output_it = atoi(tot_str);
   offset--;
 
-  addri = b58;
-  for (i=0; i<n; i++) {
-    if (*addri == '1') {
-      addrb256i--;
-      *addrb256i = 0;
+  input_it = b58;
+  for (i=1; i<n; i++) {
+    if (*input_it == '1') {
+      output_it--;
+      *output_it = 0;
       offset--;
-      addri++;
+      input_it++;
     }
     else {
       break;
     }
   }
 
-  BN_free(lval);
+  if (check_reverse == 1) {
+    unsigned char * result_b58 = (char *)malloc(n+1);
+    int ret = uchar_to_b58(result_b58,n,result+offset,m-offset,0);
+    if (ret < 0) {
+      return(-1);
+    }
+    input_it = b58;
+    const unsigned char * input_chk = result_b58 + ret;
+    for (i=0; i<n; i++) {
+      if (*input_chk != *input_it) {
+        return(-1);
+      }
+      input_it++;
+      input_chk++;
+    }
+    free(result_b58);
+  }
+
+  BN_free(tot_bn);
   BN_free(pow58);
   BN_free(one256);
   BN_free(one58);
-  free(lval_str);
+  free(tot_str);
 
   return(offset);
 }
 
 
-int uchar_to_b58(unsigned char * uchar, size_t n, size_t nr, char * result) {
+int uchar_to_b58(char * result, size_t m, const unsigned char * uchar, size_t n, unsigned char check_reverse) {
 
-  BIGNUM * lval = 0;
-  BN_dec2bn(&lval,"0");
+  BIGNUM * tot_bn = 0;
+  BN_dec2bn(&tot_bn,"0");
   BIGNUM * pow256 = 0;
   BN_dec2bn(&pow256,"1");
   BIGNUM * one256 = 0;
   BN_dec2bn(&one256,"256");
 
   int i = 0;
-  const unsigned char * addri = uchar + n - 1;
+  const unsigned char * input_it = uchar + n - 1;
   for (i=0; i<n; i++) {
-    BIGNUM * addribn = 0;
-    char * addristr = malloc(4);
-    sprintf(addristr,"%d",*addri);
-    BN_dec2bn(&addribn,addristr);
+    BIGNUM * input_bn = 0;
+    char * input_str = malloc(4);
+    sprintf(input_str,"%d",*input_it);
+    BN_dec2bn(&input_bn,input_str);
     BN_CTX * ctx = BN_CTX_new();
-    BN_mul(addribn, pow256, addribn, ctx);
-    BN_add(lval,lval,addribn);
+    BN_mul(input_bn, pow256, input_bn, ctx);
+    BN_add(tot_bn,tot_bn,input_bn);
     BN_mul(pow256, pow256, one256, ctx);
-    BN_free(addribn);
-    if (addristr != 0) {
-      free(addristr);
+    BN_free(input_bn);
+    if (input_str != 0) {
+      free(input_str);
     }
     BN_CTX_free(ctx);
-    addri--;
+    input_it--;
   }
 
-  char * addrb58i = result + nr;
-  *addrb58i = '\0';
-  addrb58i--;
+  char * output_it = result + m;
+  *output_it = '\0';
+  output_it--;
 
   BIGNUM * one58 = 0;
   BN_dec2bn(&one58,"58");
 
-  int offset = nr;
-  while (BN_cmp(lval,one58) >= 0) {
+  int offset = m;
+  while (BN_cmp(tot_bn,one58) >= 0) {
     BN_CTX * ctx = BN_CTX_new();
-    BIGNUM * lvalmod58 = BN_new();
-    BN_div(lval, lvalmod58, lval, one58, ctx);
-    char * lvalmod58_str = BN_bn2dec(lvalmod58);
-    int lvalmod58int = atoi(lvalmod58_str);
-    *addrb58i = b58chars[lvalmod58int];
-    addrb58i--;
-    BN_free(lvalmod58);
+    BIGNUM * tot_mod_58 = BN_new();
+    BN_div(tot_bn, tot_mod_58, tot_bn, one58, ctx);
+    char * tot_mod_58_str = BN_bn2dec(tot_mod_58);
+    *output_it = b58chars[atoi(tot_mod_58_str)];
+    output_it--;
+    BN_free(tot_mod_58);
     BN_CTX_free(ctx);
-    free(lvalmod58_str);
+    free(tot_mod_58_str);
     offset--;
   }
-  char * lval_str = BN_bn2dec(lval);
-  int lvalint = atoi(lval_str);
-  *addrb58i = b58chars[lvalint];
+  char * tot_str = BN_bn2dec(tot_bn);
+  *output_it = b58chars[atoi(tot_str)];
   offset--;
 
-  addri = uchar;
-  for (i=0; i<n; i++) {
-    if (*addri == '\0') {
-      addrb58i--;
-      *addrb58i = '1';
+  input_it = uchar;
+  for (i=1; i<n; i++) {
+    if (*input_it == '\0') {
+      output_it--;
+      *output_it = '1';
       offset--;
-      addri++;
+      input_it++;
     }
     else {
       break;
     }
   }
 
-  unsigned char * result_uchar = (unsigned char *)malloc(n+1);
-  int ret = b58_to_uchar(result_uchar,n,result+offset,nr-offset);
-  addri = uchar;
-  const unsigned char * addri_chk = result_uchar;
-  for (i=0; i<n; i++) {
-    if (*addri_chk != *addri) {
+  if (check_reverse == 1) {
+    unsigned char * result_uchar = (unsigned char *)malloc(n+1);
+    int ret = b58_to_uchar(result_uchar,n,result+offset,m-offset,0);
+    if (ret < 0) {
       return(-1);
     }
-    addri++;
-    addri_chk++;
+    input_it = uchar;
+    const unsigned char * input_chk = result_uchar + ret;
+    for (i=0; i<n; i++) {
+      if (*input_chk != *input_it) {
+	return(-1);
+      }
+      input_it++;
+      input_chk++;
+    }
+    free(result_uchar);
   }
 
-  free(uchar);
-  BN_free(lval);
+  BN_free(tot_bn);
   BN_free(pow256);
   BN_free(one256);
   BN_free(one58);
-  free(lval_str);
-  free(result_uchar);
+  free(tot_str);
 
   return(offset);
 }
 
 
-int b64_to_uchar(char * b64, size_t n, unsigned char * result, size_t nr) {
+int b64_to_uchar(unsigned char * result, size_t m, const char * b64, size_t n, unsigned char check_reverse) {
 
-  BIGNUM * lval = 0;
-  BN_dec2bn(&lval,"0");
+  BIGNUM * tot_bn = 0;
+  BN_dec2bn(&tot_bn,"0");
   BIGNUM * pow64 = 0;
   BN_dec2bn(&pow64,"1");
   BIGNUM * one64 = 0;
   BN_dec2bn(&one64,"64");
 
   int i = 0;
-  const unsigned char * addri = b64 + n - 1;
+  const unsigned char * input_it = b64 + n - 1;
   for (i=0; i<n; i++) {
-    BIGNUM * addribn = 0;
-    char * addristr = malloc(4);
-    sprintf(addristr,"%d",indexof(*addri,b64chars));
-    BN_dec2bn(&addribn,addristr);
+    BIGNUM * input_bn = 0;
+    char * input_str = malloc(4);
+    sprintf(input_str,"%d",indexof(*input_it,b64chars));
+    BN_dec2bn(&input_bn,input_str);
     BN_CTX * ctx = BN_CTX_new();
-    BN_mul(addribn, pow64, addribn, ctx);
-    BN_add(lval,lval,addribn);
+    BN_mul(input_bn, pow64, input_bn, ctx);
+    BN_add(tot_bn,tot_bn,input_bn);
     BN_mul(pow64, pow64, one64, ctx);
-    BN_free(addribn);
-    if (addristr != 0) {
-      free(addristr);
+    BN_free(input_bn);
+    if (input_str != 0) {
+      free(input_str);
     }
     BN_CTX_free(ctx);
-    addri--;
+    input_it--;
   }
 
-  unsigned char * addrb256i = result + nr;
-  *addrb256i = '\0';
-  addrb256i--;
+  unsigned char * output_it = result + m;
+  *output_it = '\0';
+  output_it--;
 
   BIGNUM * one256 = 0;
   BN_dec2bn(&one256,"256");
 
-  int offset = nr;
-  while (BN_cmp(lval,one256) >= 0) {
+  int offset = m;
+  while (BN_cmp(tot_bn,one256) >= 0) {
     BN_CTX * ctx = BN_CTX_new();
-    BIGNUM * lvalmod256 = BN_new();
-    BN_div(lval, lvalmod256, lval, one256, ctx);
-    char * lvalmod256_str = BN_bn2dec(lvalmod256);
-    int lvalmod256int = atoi(lvalmod256_str);
-    *addrb256i = lvalmod256int;
-    addrb256i--;
-    BN_free(lvalmod256);
+    BIGNUM * tot_mod_256 = BN_new();
+    BN_div(tot_bn, tot_mod_256, tot_bn, one256, ctx);
+    char * tot_mod_256_str = BN_bn2dec(tot_mod_256);
+    *output_it = atoi(tot_mod_256_str);
+    BN_free(tot_mod_256);
     BN_CTX_free(ctx);
-    free(lvalmod256_str);
+    free(tot_mod_256_str);
+    output_it--;
     offset--;
   }
-  char * lval_str = BN_bn2dec(lval);
-  int lvalint = atoi(lval_str);
-  *addrb256i = lvalint;
+  char * tot_str = BN_bn2dec(tot_bn);
+  *output_it = atoi(tot_str);
   offset--;
 
-  addri = b64;
-  for (i=0; i<n; i++) {
-    if (*addri == '0') {
-      addrb256i--;
-      *addrb256i = 0;
+  input_it = b64;
+  for (i=1; i<n; i++) {
+    if (*input_it == b64chars[0]) {
+      output_it--;
+      *output_it = 0;
       offset--;
-      addri++;
+      input_it++;
     }
     else {
       break;
     }
   }
 
+  if (check_reverse == 1) {
+    unsigned char * result_b64 = (char *)malloc(n+1);
+    int ret = uchar_to_b64(result_b64,n,result+offset,m-offset,0);
+    if (ret < 0) {
+      return(-1);
+    }
+    input_it = b64;
+    const unsigned char * input_chk = result_b64 + ret;
+    for (i=0; i<n; i++) {
+      if (*input_chk != *input_it) {
+        return(-1);
+      }
+      input_it++;
+      input_chk++;
+    }
+    free(result_b64);
+  }
+
+  int offset_saved = offset;
   while (offset>0) {
-    addrb256i--;
-    *addrb256i = 0;
+    output_it--;
+    *output_it = 0;
     offset--;
   }
 
-  BN_free(lval);
+  BN_free(tot_bn);
   BN_free(pow64);
   BN_free(one256);
   BN_free(one64);
-  free(lval_str);
-  
+  free(tot_str);
+
+  return(offset_saved);
 }
 
-int add_uchars(unsigned char * c1, unsigned char * c2, size_t n, unsigned char * result) {
+int uchar_to_b64(char * result, size_t m, const unsigned char * uchar, size_t n, unsigned char check_reverse) {
+
+  BIGNUM * tot_bn = 0;
+  BN_dec2bn(&tot_bn,"0");
+  BIGNUM * pow256 = 0;
+  BN_dec2bn(&pow256,"1");
+  BIGNUM * one256 = 0;
+  BN_dec2bn(&one256,"256");
+
+  int i = 0;
+  const unsigned char * input_it = uchar + n - 1;
+  for (i=0; i<n; i++) {
+    BIGNUM * input_bn = 0;
+    char * input_str = malloc(4);
+    sprintf(input_str,"%d",*input_it);
+    BN_dec2bn(&input_bn,input_str);
+    BN_CTX * ctx = BN_CTX_new();
+    BN_mul(input_bn, pow256, input_bn, ctx);
+    BN_add(tot_bn,tot_bn,input_bn);
+    BN_mul(pow256, pow256, one256, ctx);
+    BN_free(input_bn);
+    if (input_str != 0) {
+      free(input_str);
+    }
+    BN_CTX_free(ctx);
+    input_it--;
+  }
+
+  char * output_it = result + m;
+  *output_it = '\0';
+  output_it--;
+
+  BIGNUM * one64 = 0;
+  BN_dec2bn(&one64,"64");
+
+  int offset = m;
+  while (BN_cmp(tot_bn,one64) >= 0) {
+    BN_CTX * ctx = BN_CTX_new();
+    BIGNUM * tot_mod_64 = BN_new();
+    BN_div(tot_bn, tot_mod_64, tot_bn, one64, ctx);
+    char * tot_mod_64_str = BN_bn2dec(tot_mod_64);
+    *output_it = b64chars[atoi(tot_mod_64_str)];
+    output_it--;
+    BN_free(tot_mod_64);
+    BN_CTX_free(ctx);
+    free(tot_mod_64_str);
+    offset--;
+  }
+  char * tot_str = BN_bn2dec(tot_bn);
+  *output_it = b64chars[atoi(tot_str)];
+  offset--;
+
+  input_it = uchar;
+  for (i=1; i<n; i++) {
+    if (*input_it == '\0') {
+      output_it--;
+      *output_it = b64chars[0];
+      offset--;
+      input_it++;
+    }
+    else {
+      break;
+    }
+  }
+
+  if (check_reverse == 1) {
+    unsigned char * result_uchar = (unsigned char *)malloc(n+1);
+    int ret = b64_to_uchar(result_uchar,n,result+offset,m-offset,0);
+    if (ret < 0) {
+      return(-1);
+    }
+    input_it = uchar;
+    const unsigned char * input_chk = result_uchar + ret;
+    for (i=0; i<n; i++) {
+      if (*input_chk != *input_it) {
+	return(-1);
+      }
+      input_it++;
+      input_chk++;
+    }
+    free(result_uchar);
+  }
+
+  BN_free(tot_bn);
+  BN_free(pow256);
+  BN_free(one256);
+  BN_free(one64);
+  free(tot_str);
+
+  return(offset);
+}
+
+int add_uchars(unsigned char * result, const unsigned char * c1, const unsigned char * c2, size_t n) {
   int i;
   for (i=0; i<n; i++) {
     result[i] = (unsigned char)(((unsigned int)(c1[i])+(unsigned int)(c2[i]))%256);
@@ -642,7 +883,7 @@ int add_uchars(unsigned char * c1, unsigned char * c2, size_t n, unsigned char *
   return(0);
 }
 
-int subtract_uchars(unsigned char * c1, unsigned char * c2, size_t n, unsigned char * result) {
+int subtract_uchars(unsigned char * result, const unsigned char * c1, const unsigned char * c2, size_t n) {
   int i;
   for (i=0; i<n; i++) {
     int result_int = (((int)(c1[i])-(int)(c2[i]))%256);
@@ -656,24 +897,24 @@ int subtract_uchars(unsigned char * c1, unsigned char * c2, size_t n, unsigned c
   return(0);
 }
 
-int privkey_to_bc_format(const unsigned char * key, size_t n, unsigned char * pubkey, size_t m, char * result, unsigned char check) {
+int privkey_to_bc_format(char * result, const unsigned char * key, size_t n, const unsigned char * pubkey, size_t m) {
 
   int ret = 0;
   int i = 0;
 
-  if (check == 1) {
-    unsigned char * pubcheck = malloc(m);
-    ret = priv_to_pub(key,n,m,&pubcheck);
-    unsigned char * pubkeyi = pubkey;
-    unsigned char * pubchecki = pubcheck;
+  if (pubkey != 0) {
+    unsigned char * pubkey_check = malloc(m);
+    ret = priv_to_pub(pubkey_check,m,key,n);
+    const unsigned char * pubkey_it = pubkey;
+    unsigned char * pubkey_check_it = pubkey_check;
     for (i=0; i<m; i++) {
-      if (*pubkeyi != *pubchecki) {
+      if (*pubkey_it != *pubkey_check_it) {
 	return(-2);
       }
-      pubkeyi++;
-      pubchecki++;
+      pubkey_it++;
+      pubkey_check_it++;
     }
-    free(pubcheck);
+    free(pubkey_check);
   }
 
   int n_ext = n+1;
@@ -697,12 +938,14 @@ int privkey_to_bc_format(const unsigned char * key, size_t n, unsigned char * pu
   free(keyext);
   free(hash1);
   free(hash2);
-  return(uchar_to_b58(addr,n_ext+4,52,result));
-
+  ret = uchar_to_b58(result,52,addr,n_ext+4,1);
+  free(addr);
+  return(ret);
 }
 
-int pubkey_to_bc_format(const unsigned char * key, size_t n, char * result, unsigned char type) {
+int pubkey_to_bc_format(char * result, const unsigned char * key, size_t n, unsigned char type) {
 
+  int ret = 0;
   unsigned char * hash1 = malloc(32);
   SHA256(key,n,hash1);
   unsigned char * hash2 = malloc(20);
@@ -722,6 +965,7 @@ int pubkey_to_bc_format(const unsigned char * key, size_t n, char * result, unsi
   free(vh160);
   free(hash3);
   free(hash4);
-  return(uchar_to_b58(addr,25,34,result));
-
+  ret = uchar_to_b58(result,34,addr,25,1);
+  free(addr);
+  return(ret);
 }

@@ -1,15 +1,15 @@
 #include <cwallet.h>
 
 /* Generate an address-private key pair or get one from a bitcoind wallet.dat
-   -w <wallet file>
-   -d <output directory>
-   -a <address>
+   -w [wallet file]
+   -d [output directory]
+   -a [address]
    -q to qrencode
-   -o <output file>
-   -t <address type>
+   -o [output file]
+   -t [address type]
    -r to generate a random private key
-   -p <passphrase>
-   -k <private key>
+   -p [passphrase]
+   -k [private key]
    -e to encrypt
    -u to use uncompressed public keys
    Return 0 if successful */
@@ -102,9 +102,8 @@ int main(int argc, char ** argv) {
 
   int ret = 0;
 
-  char ** generate_result = (char **)malloc(sizeof(char **)*2);
-
   if ((wflag==0) && (aflag==0) && ((rflag==1)||(kflag==1))) {
+    char ** generate_result = (char **)malloc(sizeof(char **)*2);
     ret = generate_key(qflag, rflag, eflag, uflag, dvalue, ovalue, tvalue, pvalue, kvalue, generate_result);
     if (ret == 0) {
       fprintf(stdout,"%s\t%s\n",generate_result[0],generate_result[1]);
@@ -114,16 +113,19 @@ int main(int argc, char ** argv) {
       fprintf(stderr,"%s",generate_result[0]);
       fflush(stderr);
     }
+    free(generate_result[0]);
+    free(generate_result[1]);
+    free(generate_result);
     return(ret);
   }
 
   int i = 0;
-  unsigned char tvaluei = 0;
+  unsigned char tvalue_uchar = 0;
   if (tflag==0) {
-    tvaluei=0;
+    tvalue_uchar=0;
   }
   else {
-    tvaluei=(unsigned char)(atoi(tvalue));
+    tvalue_uchar = (unsigned char)(atoi(tvalue));
   }
   if (uflag==1) {
     publen = 65;
@@ -192,6 +194,7 @@ int main(int argc, char ** argv) {
     pcurchar += 3;
 
     if ((strcmp(type,"key") != 0) && (strcmp(type,"wkey") != 0)) {
+      free(type);
       continue;
     }
 
@@ -202,29 +205,65 @@ int main(int argc, char ** argv) {
     if ((publen != 65) && (publen != 33)) {
       strcat(output,"(UNFAMILIAR PUBLIC KEY)\n");
       fprintf(stdout,"%s",output);
+      free(type);
       continue;
     }
 
     pcurchar +=1;
 
-    unsigned char * pubkey = malloc(publen);
-    memcpy(pubkey,pcurchar,publen);
-
-    char * pubkey_bc = malloc(35);
-    
-    ret2 = pubkey_to_bc_format(pubkey,publen,pubkey_bc,tvaluei);
-    if (ret2==-1) {
-      fprintf(stderr,"Cannot convert public key to address\n");
+    /* Get the address twice and compare */
+    char ** bc_address = (char **)malloc(sizeof(char *)*2);
+    char ** pubkey_bc = (char **)malloc(sizeof(char *)*2);
+    unsigned char ** pubkey = (unsigned char **)malloc(sizeof(unsigned char *)*2);
+    unsigned char break_continue = 0;
+    for (i=0; i<2; i++) {
+      pubkey[i] = malloc(publen);
+      memcpy(pubkey[i],pcurchar,publen);
+      pubkey_bc[i] = malloc(35);
+      ret2 = pubkey_to_bc_format(pubkey_bc[i],pubkey[i],publen,tvalue_uchar);
+      if (ret2 == -1) {
+	fprintf(stderr,"Cannot convert public key to address\n");
+	break_continue = 1;
+	break;
+      }
+      bc_address[i] = pubkey_bc[i] + ret2;
+    }
+    if (break_continue == 1) {
       continue;
     }
-    
-    char * bcaddress = pubkey_bc+ret2;
-
-    if ((aflag == 1) && (strcmp(bcaddress,avalue) != 0)) {
+    break_continue = 0;
+    i = 0;
+    do {
+      if (bc_address[0][i] != bc_address[1][i]) {
+        fprintf(stderr,"Address generations inconsistent\n");
+	break_continue = 1;
+	break;
+      }
+      i++;
+    } while (bc_address[0][i] != '\0');
+    if (break_continue == 1) {
       continue;
     }
-
-    strcat(output,bcaddress);
+    for (i=0; i<publen; i++) {
+      if (pubkey[0][i] != pubkey[1][i]) {
+        fprintf(stderr,"Public keys inconsistent\n");
+	break_continue = 1;
+	break;
+      }
+    }
+    if (break_continue == 1) {
+      continue;
+    }
+    if ((aflag == 1) && (strcmp(bc_address[0],avalue) != 0)) {
+      free(type);
+      free(pubkey[0]);
+      free(pubkey[1]);
+      free(pubkey);
+      free(pubkey_bc);
+      free(bc_address);
+      continue;
+    }
+    strcat(output,bc_address[0]);
     strcat(output,"\t");
 
     pcurchar = data.data;
@@ -233,9 +272,14 @@ int main(int argc, char ** argv) {
     if ((curchar != 253) && (curchar != 214)) {
       strcat(output,"(UNFAMILIAR PRIVATE KEY)\n");
       fprintf(stdout,"%s",output);
+      free(type);
+      free(pubkey[0]);
+      free(pubkey[1]);
+      free(pubkey);
+      free(pubkey_bc);
+      free(bc_address);
       continue;
     }
-
 
     if (curchar == 253) {
       pcurchar += 11;
@@ -246,41 +290,82 @@ int main(int argc, char ** argv) {
 
     pcurchar += 1;
 
-    unsigned char * privkey = malloc(privlen);
-    memcpy(privkey,pcurchar,privlen);
-
-    char * privkey_bc = malloc(53);
-    
-    ret2 = privkey_to_bc_format(privkey,privlen,pubkey,publen,privkey_bc,1);
-    if (ret2 == -1) {
-      strcat(output,"(ERROR)\n");
-      fprintf(stdout,"%s",output);
+    /* Get the private key twice and compare */
+    char ** bc_privkey = (char **)malloc(sizeof(char *)*2);
+    char ** privkey_bc = (char **)malloc(sizeof(char *)*2);
+    unsigned char ** privkey = (unsigned char **)malloc(sizeof(unsigned char *)*2);
+    break_continue = 0;
+    for (i=0; i<2; i++) {
+      privkey[i] = malloc(privlen);
+      memcpy(privkey[i],pcurchar,privlen);
+      privkey_bc[i] = malloc(53);
+      ret2 = privkey_to_bc_format(privkey_bc[i],privkey[i],privlen,pubkey[0],publen);
+      if (ret2 == -1) {
+	strcat(output,"(ERROR)\n");
+	fprintf(stdout,"%s",output);
+	break_continue = 1;
+	break;
+      }
+      else if (ret2 == -2) {
+	strcat(output,"(INVALID KEY)\n");
+	fprintf(stdout,"%s",output);
+	break_continue = 1;
+	break;
+      }
+      bc_privkey[i] = privkey_bc[i] + ret2;
+    }
+    if (break_continue == 1) {
       continue;
     }
-    else if (ret2 == -2) {
-      strcat(output,"(INVALID KEY)\n");
-      fprintf(stdout,"%s",output);
-      continue;
-    }
-
     addressmatch = 1;
-
-    char * bcprivkey = privkey_bc + ret2;
-
-    strcat(output,bcprivkey);
+    break_continue = 0;
+    i = 0;
+    do {
+      if (bc_privkey[0][i] != bc_privkey[1][i]) {
+        fprintf(stderr,"Bitcoin private key generations inconsistent\n");
+        break_continue = 1;
+	break;
+      }
+      i++;
+    } while (bc_privkey[0][i] != '\0');
+    if (break_continue == 1) {
+      continue;
+    }
+    for (i=0; i<privlen; i++) {
+      if (privkey[0][i] != privkey[1][i]) {
+        fprintf(stderr,"Private keys inconsistent\n");
+	break_continue = 1;
+	break;
+      }
+    }
+    if (break_continue == 1) {
+      continue;
+    }
+    strcat(output,bc_privkey[0]);
     strcat(output,"\n");
+
     fprintf(stdout,"%s",output);
     strcpy(output,"");
 
     if ((qflag == 1) && (aflag == 1)) {
-      ret2 = qrencode(bcaddress,bcprivkey,dvalue,ovalue,pvalue,eflag);
+      ret2 = qrencode(bc_address[0],bc_privkey[0],dvalue,ovalue,pvalue,eflag);
     }
 
     free(type);
+    free(pubkey[0]);
+    free(pubkey[1]);
+    free(privkey[0]);
+    free(privkey[1]);
     free(pubkey);
+    free(pubkey_bc[0]);
+    free(pubkey_bc[1]);
     free(pubkey_bc);
+    free(bc_address);
     free(privkey);
+    free(privkey_bc[0]);
+    free(privkey_bc[1]);
     free(privkey_bc);
+    free(bc_privkey);
 
     if (aflag == 1) {
       ret = DB_NOTFOUND;
@@ -290,6 +375,7 @@ int main(int argc, char ** argv) {
   }
 
   free(walletfile);
+  free(output);
 
   if ((aflag == 1) && (addressmatch == 0)) {
     fprintf(stderr,"Address not found\n");
