@@ -25,7 +25,7 @@ int fill_latex_lines (int maxncharforline, char * source, char * target, int sta
   return(ncharforline);
 }
 
-int qrencode (char * bc_address, char * bc_privkey, char * dvalue, char * ovalue, char * pvalue, unsigned char eflag) {
+int qrencode (char * bc_address, char * bc_privkey, char * dvalue, char * ovalue, char * pvalue, unsigned char eflag, unsigned char sflag) {
 
   int ret = 0;
   char * cmd = malloc(1000);
@@ -58,7 +58,14 @@ int qrencode (char * bc_address, char * bc_privkey, char * dvalue, char * ovalue
   
   strcpy(cmd,"qrencode -o '");
   strcat(cmd,bc_address);
-  strcat(cmd,".png' -s 12 -l H '");
+  strcat(cmd,".png' -s ");
+  if (sflag == 1) {
+    strcat(cmd,"3");
+  }
+  else {
+    strcat(cmd,"12");
+  }
+  strcat(cmd," -l H '");
   strcat(cmd,bc_privkey);
   strcat(cmd,"'");
   ret = system(cmd);
@@ -78,23 +85,31 @@ int qrencode (char * bc_address, char * bc_privkey, char * dvalue, char * ovalue
     }
   }
   
-  strcpy(cmd,"echo '\\documentclass{article}\\usepackage{graphicx}\\usepackage[top=1in, bottom=1in, left=0in, right=0in]{geometry}\\usepackage{multicol}\\begin{document}\\pagenumbering{gobble}{\\centering ");
-  strcat(cmd,bc_address);
-  strcat(cmd,"\\\\\\includegraphics{");
-  strcat(cmd,bc_address);
-  strcat(cmd,".png}\\\\");
-  strcat(cmd,bc_privkey);
-  strcat(cmd,"\\par}");
-  if ((pvalue != 0) && (eflag ==1)) {
+  strcpy(cmd,"echo '\\documentclass{article}\\usepackage{graphicx}\\usepackage[top=1in, bottom=1in, left=0in, right=0in]{geometry}\\usepackage{multicol}\\begin{document}\\pagenumbering{gobble}");
+  if (sflag == 1) {
     strcat(cmd,"\\newpage\\begin{multicols}{2}{\\raggedleft\\texttt{~\\\\");
-    ret = fill_latex_lines(15,bc_address,cmd+strlen(cmd),0);
-    strcat(cmd,".");
-    ret = fill_latex_lines(15,bc_privkey,cmd+strlen(cmd),ret+1);
-    strcat(cmd,".");
-    ret = fill_latex_lines(15,pvalue,cmd+strlen(cmd),ret+1);
+    ret = fill_latex_lines(6,bc_privkey,cmd+strlen(cmd),0);
     strcat(cmd,"}\\par}\\columnbreak{\\raggedright\\includegraphics{");
-    strcat(cmd,bc_privkey);
+    strcat(cmd,bc_address);
     strcat(cmd,".png}\\par}\\end{multicols}");
+  }
+  else {
+    strcat(cmd,"{\\centering ");
+    strcat(cmd,bc_address);
+    strcat(cmd,"\\\\\\includegraphics{");
+    strcat(cmd,bc_address);
+    strcat(cmd,".png}\\\\");
+    strcat(cmd,bc_privkey);
+    strcat(cmd,"\\par}");
+    if ((pvalue != 0) && (eflag == 1)) {
+      strcat(cmd,"\\newpage\\begin{multicols}{2}{\\raggedleft\\texttt{~\\\\");
+      ret = fill_latex_lines(11,bc_privkey,cmd+strlen(cmd),0);
+      strcat(cmd,".");
+      ret = fill_latex_lines(11,pvalue,cmd+strlen(cmd),ret+1);
+      strcat(cmd,"}\\par}\\columnbreak{\\raggedright\\includegraphics{");
+      strcat(cmd,bc_privkey);
+      strcat(cmd,".png}\\par}\\end{multicols}");
+    }
   }
   strcat(cmd,"\\end{document}' > ");
   strcat(cmd,bc_address);
@@ -157,7 +172,7 @@ int indexof(const char c, const char * str) {
   return(-1);
 }
 
-int generate_key(unsigned char qflag, unsigned char rflag, unsigned char eflag, unsigned char uflag, char * dvalue, char * ovalue, char * tvalue, char * pvalue, char * kvalue, char ** result) {
+int generate_key(unsigned char qflag, unsigned char rflag, unsigned char eflag, unsigned char uflag, char * dvalue, char * ovalue, char * tvalue, char * pvalue, char * kvalue, unsigned char sflag, char ** result) {
 
   int ret = 0;
   
@@ -178,6 +193,7 @@ int generate_key(unsigned char qflag, unsigned char rflag, unsigned char eflag, 
   strcpy(result[1],"");
 
   if (rflag == 1) {
+    eflag = 1;
     unsigned char * privkey = malloc(privlen);
     int randomData = open("/dev/random", O_RDONLY);
     size_t randomDataLen = 0;
@@ -281,7 +297,7 @@ int generate_key(unsigned char qflag, unsigned char rflag, unsigned char eflag, 
     strcpy(result[1],bc_privkey[0]);
 
     if (qflag == 1) {
-      ret = qrencode(bc_address[0],bc_privkey[0],dvalue,ovalue,pvalue,eflag);
+      ret = qrencode(bc_address[0],bc_privkey[0],dvalue,ovalue,pvalue,eflag,sflag);
       if (ret!=0) {
 	strcpy(result[0],"Cannot qr-encode\n");
 	return(1);
@@ -423,7 +439,7 @@ int generate_key(unsigned char qflag, unsigned char rflag, unsigned char eflag, 
     strcpy(result[1],bc_privkey[0]);
 
     if (qflag == 1) {
-      ret = qrencode(bc_address[0],bc_privkey[0],dvalue,ovalue,pvalue,eflag);
+      ret = qrencode(bc_address[0],bc_privkey[0],dvalue,ovalue,pvalue,eflag,sflag);
       if (ret!=0) {
         strcpy(result[0],"Cannot qr-encode\n");
         return(1);

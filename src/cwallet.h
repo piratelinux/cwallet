@@ -22,15 +22,13 @@ extern const char * b64chars; /* The alphabet for the base 64 characters */
    pvalue: the passphrase
    eflag: the encryption flag
    Return 0 if successful */
-int qrencode (char * bc_address, char * bc_privkey, char * dvalue, char * ovalue, char * pvalue, unsigned char eflag);
+int qrencode (char * bc_address, char * bc_privkey, char * dvalue, char * ovalue, char * pvalue, unsigned char eflag, unsigned char sflag);
 
 /* Get the first occurence of c in the string str.
    c: the character to search for
    str: the string
    Return -1 if c is not found in str. Otherwise, return the index of the first occurence of c in str. */
 int indexof(const char c, const char * str);
-
-int generate_key(unsigned char qflag, unsigned char rflag, unsigned char eflag, unsigned char uflag, char * dvalue, char * ovalue, char * tvalue, char * pvalue, char * kvalue, char ** result);
 
 /* Generate a Bitcoin private key and save the output to result. If successful, the first string in result is the address in base 58 format, and the second string is the private key in base 58 format. If not successful, the first string in result is an error message.
    qflag: 1 to QR encode the result
@@ -44,7 +42,7 @@ int generate_key(unsigned char qflag, unsigned char rflag, unsigned char eflag, 
    kvalue: the private key in the standard Bitcoin base 58 format
    result: The result the will contain the address and private key, or the error message.
    Return 0 if successful. */
-int generate_key(unsigned char qflag, unsigned char rflag, unsigned char eflag, unsigned char uflag, char * dvalue, char * ovalue, char * tvalue, char * pvalue, char * kvalue, char ** result);
+int generate_key(unsigned char qflag, unsigned char rflag, unsigned char eflag, unsigned char uflag, char * dvalue, char * ovalue, char * tvalue, char * pvalue, char * kvalue, unsigned char sflag, char ** result);
 
 /* Get the public key corresponding to priv, and put the public key in result.
    result: The pointer to the unsigned char array that is to contain the public key

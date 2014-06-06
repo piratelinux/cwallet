@@ -29,6 +29,7 @@ int main(int argc, char ** argv) {
   unsigned char kflag = 0;
   unsigned char eflag = 0;
   unsigned char uflag = 0;
+  unsigned char sflag = 0;
   char * wvalue = 0;
   char * dvalue = 0;
   char * avalue = 0;
@@ -41,7 +42,7 @@ int main(int argc, char ** argv) {
      
   opterr = 0;
 
-  while ((c = getopt (argc, argv, "w:d:a:qo:t:rp:k:eu")) != -1) {
+  while ((c = getopt (argc, argv, "w:d:a:qo:t:rp:k:eus")) != -1) {
     switch (c) {
     case 'w':
       wflag = 1;
@@ -83,6 +84,9 @@ int main(int argc, char ** argv) {
     case 'u':
       uflag = 1;
       break;
+    case 's':
+      sflag = 1;
+      break;
     case '?':
       if ((optopt == 'w') || (optopt == 'd') || (optopt == 'a') || (optopt == 't') || (optopt == 'p') || (optopt == 'k'))
 	fprintf (stderr,"Option -%c requires an argument.\n",optopt);
@@ -104,7 +108,7 @@ int main(int argc, char ** argv) {
 
   if ((wflag==0) && (aflag==0) && ((rflag==1)||(kflag==1))) {
     char ** generate_result = (char **)malloc(sizeof(char **)*2);
-    ret = generate_key(qflag, rflag, eflag, uflag, dvalue, ovalue, tvalue, pvalue, kvalue, generate_result);
+    ret = generate_key(qflag, rflag, eflag, uflag, dvalue, ovalue, tvalue, pvalue, kvalue, sflag, generate_result);
     if (ret == 0) {
       fprintf(stdout,"%s\t%s\n",generate_result[0],generate_result[1]);
       fflush(stdout);
@@ -348,7 +352,7 @@ int main(int argc, char ** argv) {
     strcpy(output,"");
 
     if ((qflag == 1) && (aflag == 1)) {
-      ret2 = qrencode(bc_address[0],bc_privkey[0],dvalue,ovalue,pvalue,eflag);
+      ret2 = qrencode(bc_address[0],bc_privkey[0],dvalue,ovalue,pvalue,eflag,sflag);
     }
 
     free(type);

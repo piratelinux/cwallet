@@ -22,6 +22,7 @@ struct _Data {
   GtkEntry * entryoutdir;
   GtkEntry * entryprivkey;
   GtkEntry * entrypassphrase;
+  GtkEntry * entrypassphrase_confirm;
 
   gchar * action;
   gchar * curpath;
@@ -38,6 +39,7 @@ struct _Data {
   gint timeout_id2;
 
   GtkWidget * button_decrypt;
+  GtkWidget * button_mini_key;
 };
 
 static void cb_execute_install(GtkButton * button, Data * data);
@@ -215,7 +217,7 @@ static void cb_execute(GtkButton * button, Data * data) {
 
     if (strcmp(data->action,"install") == 0) {
       argc = 4;
-      argv = malloc(sizeof(gchar*) * 11);
+      argv = malloc(sizeof(gchar*) * 12);
       argv[0] = strdup(data->processpath);
       argv[1] = strdup("--install");
       argv[2] = strdup("--async");
@@ -241,6 +243,11 @@ static void cb_execute(GtkButton * button, Data * data) {
       }
       const gchar * passphrase = gtk_entry_get_text(data->entrypassphrase);
       if (strcmp(passphrase,"")!=0) {
+	const gchar * passphrase_confirm = gtk_entry_get_text(data->entrypassphrase_confirm);
+	if (strcmp(passphrase,passphrase_confirm)!=0) {
+	  gtk_label_set_label(data->message,"Error: The passphrases do not match\n");
+	  return;
+	}
 	argc++;
 	argv[argc] = strdup("-p");
 	argc++;
@@ -250,6 +257,10 @@ static void cb_execute(GtkButton * button, Data * data) {
       if (gtk_toggle_button_get_active((GtkToggleButton *)(data->button_decrypt))==FALSE) {
 	argc++;
 	argv[argc] = strdup("-e");
+      }
+      if (gtk_toggle_button_get_active((GtkToggleButton *)(data->button_mini_key))==TRUE) {
+        argc++;
+        argv[argc] = strdup("-s");
       }
       argc++;
       argv[argc] = 0;
@@ -346,6 +357,11 @@ int install_pack(int argc, char **argv, Data * data) {
   if(arg_e!=-1) {
     eflag = 1;
   }
+  unsigned char sflag = 0;
+  gint arg_s = getargi("-s", argc, argv);
+  if(arg_s!=-1) {
+    sflag = 1;
+  }
 
   gchar * str = g_malloc(strlen(maindir)+strlen(outdir)+200);
 
@@ -356,7 +372,7 @@ int install_pack(int argc, char **argv, Data * data) {
   }
 
   char ** generate_result = (char **)malloc(sizeof(char *)*2);
-  ret = generate_key(1, rflag, eflag, 0, outdir, 0, 0, passphrase, privkey, generate_result);
+  ret = generate_key(1, rflag, eflag, 0, outdir, 0, 0, passphrase, privkey, sflag, generate_result);
   if (ret==0) {
     char * address = generate_result[0];
     fprintf(stdout,"Saved to %s.pdf\n",address);
@@ -403,6 +419,7 @@ int gui_status(int argc, char ** argv, Data * data) {
   GtkLabel * labeloutdir = 0;
   GtkLabel * labelprivkey = 0;
   GtkLabel * labelpassphrase = 0;
+  GtkLabel * labelpassphrase_confirm = 0;
   GtkImage * logo;
   GtkHButtonBox * hbuttonbox;
   GtkEntry * entrywalletfile = 0;
@@ -410,8 +427,9 @@ int gui_status(int argc, char ** argv, Data * data) {
   GtkEntry * entryoutdir = 0;
   GtkEntry * entryprivkey = 0;
   GtkEntry * entrypassphrase = 0;
-  GtkWidget * button_radio = 0;
-  GSList * group_radio = 0;
+  GtkEntry * entrypassphrase_confirm = 0;
+  GtkWidget * button_decrypt = 0;
+  GtkWidget * button_mini_key = 0;
 
   gtk_init(&argc, &argv);
 
@@ -454,7 +472,7 @@ int gui_status(int argc, char ** argv, Data * data) {
   gtk_table_attach(GTK_TABLE(table1), (GtkWidget *)message, 1, 2, 1, 2, GTK_EXPAND | GTK_FILL, GTK_EXPAND | GTK_FILL, 5, 5);
   gtk_label_set_line_wrap ((GtkLabel *)message, TRUE);
 
-  table3 = (GtkTable *)gtk_table_new(3, 2, FALSE);
+  table3 = (GtkTable *)gtk_table_new(4, 2, FALSE);
   gtk_table_set_row_spacings(table3,0.5);
   gtk_table_attach(GTK_TABLE(table1), (GtkWidget *)table3, 1, 2, 2, 3, GTK_EXPAND | GTK_FILL, GTK_EXPAND | GTK_FILL, 5, 5);
 
@@ -481,16 +499,26 @@ int gui_status(int argc, char ** argv, Data * data) {
   gtk_table_attach(GTK_TABLE(table3), (GtkWidget *)labelpassphrase, 0, 1, 2, 3, GTK_FILL, 0, 5, 5);
 
   entrypassphrase = (GtkEntry *)gtk_entry_new();
+  gtk_entry_set_visibility((GtkEntry *)entrypassphrase,FALSE);
   gtk_table_attach(GTK_TABLE(table3), (GtkWidget *)entrypassphrase, 1, 2, 2, 3, GTK_EXPAND | GTK_FILL, 0, 5, 5);
   data->entrypassphrase = entrypassphrase;
 
-  button_radio = gtk_radio_button_new_with_label (0, "encrypt");
-  gtk_toggle_button_set_active((GtkToggleButton *)(button_radio), TRUE);
-  gtk_table_attach(GTK_TABLE(table3), (GtkWidget *)button_radio, 0, 1, 3, 4, GTK_FILL, 0, 5, 5);
-  group_radio = gtk_radio_button_group (GTK_RADIO_BUTTON (button_radio));
-  button_radio = gtk_radio_button_new_with_label(group_radio, "decrypt");
-  gtk_table_attach(GTK_TABLE(table3), (GtkWidget *)button_radio, 1, 2, 3, 4, GTK_EXPAND | GTK_FILL, 0, 5, 5);
-  data->button_decrypt = button_radio;
+  labelpassphrase_confirm = (GtkLabel *)gtk_label_new("Confirm:");
+  gtk_misc_set_alignment((GtkMisc *)labelpassphrase_confirm,0,0);
+  gtk_table_attach(GTK_TABLE(table3), (GtkWidget *)labelpassphrase_confirm, 0, 1, 3, 4, GTK_FILL, 0, 5, 5);
+
+  entrypassphrase_confirm = (GtkEntry *)gtk_entry_new();
+  gtk_entry_set_visibility((GtkEntry *)entrypassphrase_confirm,FALSE);
+  gtk_table_attach(GTK_TABLE(table3), (GtkWidget *)entrypassphrase_confirm, 1, 2, 3, 4, GTK_EXPAND | GTK_FILL, 0, 5, 5);
+  data->entrypassphrase_confirm = entrypassphrase_confirm;
+
+  button_decrypt = gtk_check_button_new_with_label ("decrypt");
+  gtk_table_attach(GTK_TABLE(table3), (GtkWidget *)button_decrypt, 0, 1, 4, 5, GTK_FILL, 0, 5, 5);
+  data->button_decrypt = button_decrypt;  
+
+  button_mini_key= gtk_check_button_new_with_label ("minimal");
+  gtk_table_attach(GTK_TABLE(table3), (GtkWidget *)button_mini_key, 1, 2, 4, 5, GTK_FILL, 0, 5, 5);
+  data->button_mini_key = button_mini_key;
 
   progress = (GtkProgressBar *)gtk_progress_bar_new();
   gtk_table_attach(GTK_TABLE(table1),(GtkWidget *)progress, 1, 2, 3, 4, GTK_FILL, GTK_SHRINK | GTK_FILL, 5, 0);
