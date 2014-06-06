@@ -38,6 +38,7 @@ Options for command line version:
 -k <private key>
 -e (encrypt the private key with the passphrase)
 -u (use uncompressed public keys)
+-s (create a small/minimal wallet)
 
 Example:
 
