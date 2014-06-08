@@ -17,12 +17,6 @@ if test "x$HAVE_QRENCODE" = "xfalse"; then
    AC_MSG_ERROR([*** qrencode not found])
 fi
 
-AC_CHECK_PROG(HAVE_CONVERT,convert,true,false)
-
-if test "x$HAVE_CONVERT" = "xfalse"; then
-        AC_MSG_ERROR([*** convert (ImageMagick) not found])
-fi
-
 AC_CONFIG_FILES([
  Makefile
  src/Makefile
