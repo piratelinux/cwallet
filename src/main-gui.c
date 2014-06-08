@@ -56,7 +56,7 @@ gchar* substring(const gchar* str, size_t begin, size_t len) {
   if (str == 0 || strlen(str) == 0 || strlen(str) < begin || strlen(str) < (begin+len))
     return 0;
 
-  return strndup(str + begin, len);
+  return strndup(str+begin,len);
 }
 
 /* Get the absolute path of the given process path, by following all links via readlink()
@@ -68,7 +68,7 @@ gchar * get_readlink(gchar * procpath) {
     gchar * buffer = g_malloc(size);
 
     do {
-      int nchars = readlink(procpath, buffer, size);
+      int nchars = readlink(procpath,buffer,size);
       if (nchars < 0) {
 	g_free(buffer);
 	return(0);
@@ -130,7 +130,7 @@ static gboolean cb_err_watch(GIOChannel * channel, GIOCondition  cond, Data * da
       g_io_channel_unref(channel);
       return(FALSE);
     }
-    g_io_channel_read_line(channel,&string,&size, 0, 0);
+    g_io_channel_read_line(channel,&string,&size,0,0);
     if (string!=0) {
       g_free(string);
     }
@@ -149,7 +149,7 @@ static gboolean cb_out_watch(GIOChannel * channel, GIOCondition  cond, Data * da
         return(FALSE);
     }
  
-    g_io_channel_read_line(channel, &string, &size, 0, 0);
+    g_io_channel_read_line(channel,&string,&size,0,0);
     int len = strlen(string);
     if (*(string+len-1)=='\n') {
       *(string+len-1) = '\0';
@@ -161,10 +161,10 @@ static gboolean cb_out_watch(GIOChannel * channel, GIOCondition  cond, Data * da
 
 	g_source_remove(data->timeout_id);
 	g_source_remove(data->timeout_id2);
-	gtk_progress_bar_set_fraction((GtkProgressBar *)data->progress, 0.0);
+	gtk_progress_bar_set_fraction((GtkProgressBar *)data->progress,0.0);
 	g_free(data->action);
 
-	gtk_label_set_label(data->message, string);
+	gtk_label_set_label(data->message,string);
 	fprintf(stdout,"%s\n",string);
 
 	gtk_widget_set_sensitive((GtkWidget *)data->button_enable,TRUE);
@@ -175,7 +175,7 @@ static gboolean cb_out_watch(GIOChannel * channel, GIOCondition  cond, Data * da
 
         g_source_remove(data->timeout_id);
 	g_source_remove(data->timeout_id2);
-        gtk_progress_bar_set_fraction((GtkProgressBar *)data->progress, 0.0);
+        gtk_progress_bar_set_fraction((GtkProgressBar *)data->progress,0.0);
 	g_free(data->action);
 
 	int tab_index = indexof('\t',string);
@@ -183,7 +183,7 @@ static gboolean cb_out_watch(GIOChannel * channel, GIOCondition  cond, Data * da
 	  string[tab_index] = '\n';
 	}
 
-	gtk_label_set_label(data->message, string);
+	gtk_label_set_label(data->message,string);
 	fprintf(stderr,"%s\n",string);
 
 	gtk_widget_set_sensitive((GtkWidget *)data->button_enable,TRUE);
@@ -204,12 +204,12 @@ static gboolean cb_timeout(Data *data) {
 
 /* Ask for more entropy once the corresponding timeout event occurs */
 static gboolean cb_timeout2(Data *data) {
-  gtk_label_set_label(data->message, "Shake your mouse for more entropy");
+  gtk_label_set_label(data->message,"Shake your mouse for more entropy");
   return(FALSE);
 }
 
 /* Perform the action that was set in the action variable */
-static void cb_execute(GtkButton * button, Data * data) {
+static void cb_execute(GtkButton * button,Data * data) {
 
     GPid pid;
     gchar ** argv;
@@ -265,21 +265,21 @@ static void cb_execute(GtkButton * button, Data * data) {
       argc++;
       argv[argc] = 0;
       gtk_widget_set_sensitive((GtkWidget *)data->button_enable,FALSE);
-      gtk_label_set_label(data->message, "Generating");
+      gtk_label_set_label(data->message,"Generating");
     }
 
     gint in, out, err;
     GIOChannel *in_ch, *out_ch, *err_ch;
     gboolean ret;
  
-    ret = g_spawn_async_with_pipes(0, argv, 0, G_SPAWN_DO_NOT_REAP_CHILD, 0, 0, &pid, &in, &out, &err, 0);
+    ret = g_spawn_async_with_pipes(0,argv,0,G_SPAWN_DO_NOT_REAP_CHILD,0,0,&pid,&in,&out,&err,0);
     if(! ret) {
       g_error("SPAWN FAILED");
       return;
     }
 
     /* Add watch function to catch termination of the process. This function will clean any remnants of process. */
-    g_child_watch_add(pid, (GChildWatchFunc)cb_child_watch, data);
+    g_child_watch_add(pid,(GChildWatchFunc)cb_child_watch,data);
  
     /* Create channels that will be used to read data from pipes. */
 #ifdef G_OS_WIN32
@@ -293,17 +293,17 @@ static void cb_execute(GtkButton * button, Data * data) {
 #endif
  
     /* Add watches to channels */
-    g_io_add_watch(out_ch, G_IO_IN | G_IO_HUP, (GIOFunc)cb_out_watch, data);
-    g_io_add_watch(err_ch, G_IO_IN | G_IO_HUP, (GIOFunc)cb_err_watch, data);
+    g_io_add_watch(out_ch,G_IO_IN|G_IO_HUP,(GIOFunc)cb_out_watch,data);
+    g_io_add_watch(err_ch,G_IO_IN|G_IO_HUP,(GIOFunc)cb_err_watch,data);
 
     /* Install timeout function that will move the progress bar */
-    data->timeout_id = g_timeout_add(100, (GSourceFunc)cb_timeout, data);
+    data->timeout_id = g_timeout_add(100,(GSourceFunc)cb_timeout,data);
     data->timeout_id2 = g_timeout_add_seconds (3,(GSourceFunc)cb_timeout2,data);
 
     gsize * bytes_written = 0;
     GError * error = 0;
-    g_io_channel_write_chars(in_ch, "ready\n", -1, bytes_written, &error);
-    g_io_channel_flush(in_ch, &error);
+    g_io_channel_write_chars(in_ch,"ready\n",-1,bytes_written,&error);
+    g_io_channel_flush(in_ch,&error);
 
     g_free(bytes_written);
     g_free(error);
@@ -335,7 +335,7 @@ int install_pack(int argc, char **argv, Data * data) {
   gchar * outdir = 0;
   gchar * privkey = 0;
   gchar * passphrase = 0;
-  gint arg_d = getargi("-d", argc, argv);
+  gint arg_d = getargi("-d",argc,argv);
   if (arg_d!=-1) {
     outdir = strdup(argv[arg_d+1]);
   }
@@ -344,21 +344,21 @@ int install_pack(int argc, char **argv, Data * data) {
     fflush(stdout);
     return(1);
   }
-  gint arg_k = getargi("-k", argc, argv);
+  gint arg_k = getargi("-k",argc,argv);
   if (arg_k!=-1) {
     privkey = strdup(argv[arg_k+1]);
   }
-  gint arg_p = getargi("-p", argc, argv);
+  gint arg_p = getargi("-p",argc,argv);
   if(arg_p!=-1) {
     passphrase = strdup(argv[arg_p+1]);
   }
   unsigned char eflag = 0;
-  gint arg_e = getargi("-e", argc, argv);
+  gint arg_e = getargi("-e",argc,argv);
   if(arg_e!=-1) {
     eflag = 1;
   }
   unsigned char sflag = 0;
-  gint arg_s = getargi("-s", argc, argv);
+  gint arg_s = getargi("-s",argc,argv);
   if(arg_s!=-1) {
     sflag = 1;
   }
@@ -372,7 +372,7 @@ int install_pack(int argc, char **argv, Data * data) {
   }
 
   char ** generate_result = (char **)malloc(sizeof(char *)*2);
-  ret = generate_key(1, rflag, eflag, 0, outdir, 0, 0, passphrase, privkey, sflag, generate_result);
+  ret = generate_key(1,rflag,eflag,0,outdir,0,0,passphrase,privkey,sflag,generate_result);
   if (ret==0) {
     char * address = generate_result[0];
     fprintf(stdout,"Saved to %s.pdf\n",address);
@@ -431,7 +431,7 @@ int gui_status(int argc, char ** argv, Data * data) {
   GtkWidget * button_decrypt = 0;
   GtkWidget * button_mini_key = 0;
 
-  gtk_init(&argc, &argv);
+  gtk_init(&argc,&argv);
 
   gchar * maindir = data->maindir;
 
@@ -442,95 +442,96 @@ int gui_status(int argc, char ** argv, Data * data) {
   gchar * str = g_malloc(strlen(maindir)+50);
 
   window = (GtkWindow *)gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
-  gtk_window_set_default_size(GTK_WINDOW(window), 500, 400);
-  gtk_window_set_title(GTK_WINDOW(window), "Cwallet");
+  gtk_window_set_position(GTK_WINDOW(window),GTK_WIN_POS_CENTER);
+  gtk_window_set_default_size(GTK_WINDOW(window),500,400);
+  gtk_window_set_title(GTK_WINDOW(window),"Cwallet");
 
   strcpy(str,maindir);
   strcat(str,"/icon.png");
 
-  gtk_window_set_icon_from_file(GTK_WINDOW(window), str, 0);
+  gtk_window_set_icon_from_file(GTK_WINDOW(window),str,0);
   
-  g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_main_quit), 0);
+  g_signal_connect(G_OBJECT(window),"destroy",G_CALLBACK(gtk_main_quit),0);
   
-  table1 = (GtkTable *)gtk_table_new(4, 5, FALSE);
-  gtk_container_add((GtkContainer *)window, (GtkWidget *)table1);
+  table1 = (GtkTable *)gtk_table_new(4,5,FALSE);
+  gtk_container_add((GtkContainer *)window,(GtkWidget *)table1);
   
-  table2 = (GtkTable *)gtk_table_new(3, 3, FALSE);
-  gtk_table_attach(GTK_TABLE(table1), (GtkWidget *)table2, 1, 2, 0, 1, GTK_EXPAND | GTK_FILL, GTK_EXPAND | GTK_FILL, 0, 0);
+  table2 = (GtkTable *)gtk_table_new(3,3,FALSE);
+  gtk_table_attach(GTK_TABLE(table1),(GtkWidget *)table2,1,2,0,1,GTK_EXPAND|GTK_FILL,GTK_EXPAND|GTK_FILL,0,0);
 
   strcpy(str,maindir);
   strcat(str,"/logo.png");
 
   logo = (GtkImage *)gtk_image_new_from_file(str);
-  gtk_table_attach(GTK_TABLE(table2), (GtkWidget *)logo, 1, 2, 1, 2, GTK_EXPAND | GTK_FILL, GTK_EXPAND | GTK_FILL, 5, 5);
+  gtk_table_attach(GTK_TABLE(table2),(GtkWidget *)logo,1,2,1,2,GTK_EXPAND|GTK_FILL,GTK_EXPAND|GTK_FILL,5,5);
 
-  message = (GtkLabel *)gtk_label_new("Generate a PDF for your paper wallet.\nAll fields are optional except the output directory.\n");
+  message = (GtkLabel *)gtk_label_new("Generate a PDF for your paper wallet.\nAll fields are optional except the output directory.");
   gtk_label_set_justify((GtkLabel *)message,GTK_JUSTIFY_CENTER);
   gtk_widget_set_size_request((GtkWidget *)message,-1,60);
   gtk_misc_set_alignment((GtkMisc *)message,0.5,1);
-  gtk_table_attach(GTK_TABLE(table1), (GtkWidget *)message, 1, 2, 1, 2, GTK_EXPAND | GTK_FILL, GTK_EXPAND | GTK_FILL, 5, 5);
-  gtk_label_set_line_wrap ((GtkLabel *)message, TRUE);
+  gtk_table_attach(GTK_TABLE(table1),(GtkWidget *)message,1,2,1,2,GTK_EXPAND|GTK_FILL,GTK_EXPAND|GTK_FILL,5,5);
+  gtk_label_set_line_wrap ((GtkLabel *)message,TRUE);
+  gtk_label_set_selectable((GtkLabel *)message,TRUE);
 
-  table3 = (GtkTable *)gtk_table_new(4, 2, FALSE);
+  table3 = (GtkTable *)gtk_table_new(4,2,FALSE);
   gtk_table_set_row_spacings(table3,0.5);
-  gtk_table_attach(GTK_TABLE(table1), (GtkWidget *)table3, 1, 2, 2, 3, GTK_EXPAND | GTK_FILL, GTK_EXPAND | GTK_FILL, 5, 5);
+  gtk_table_attach(GTK_TABLE(table1),(GtkWidget *)table3,1,2,2,3,GTK_EXPAND|GTK_FILL,GTK_EXPAND|GTK_FILL,5,5);
 
   labeloutdir = (GtkLabel *)gtk_label_new("Output directory:");
   gtk_misc_set_alignment((GtkMisc *)labeloutdir,0.,0.5);
-  gtk_table_attach(GTK_TABLE(table3), (GtkWidget *)labeloutdir, 0, 1, 0, 1, GTK_FILL, 0, 5, 5);
+  gtk_table_attach(GTK_TABLE(table3),(GtkWidget *)labeloutdir,0,1,0,1,GTK_FILL,0,5,5);
 
   entryoutdir = (GtkEntry *)gtk_entry_new();
   gtk_entry_set_text(entryoutdir,homedir);
   gtk_entry_append_text(entryoutdir,"/cwallet");
-  gtk_table_attach(GTK_TABLE(table3), (GtkWidget *)entryoutdir, 1, 2, 0, 1, GTK_EXPAND | GTK_FILL, 0, 5, 5);
+  gtk_table_attach(GTK_TABLE(table3),(GtkWidget *)entryoutdir,1,2,0,1,GTK_EXPAND|GTK_FILL,0,5,5);
   data->entryoutdir = entryoutdir;
 
   labelprivkey = (GtkLabel *)gtk_label_new("Private key:");
   gtk_misc_set_alignment((GtkMisc *)labelprivkey,0,0);
-  gtk_table_attach(GTK_TABLE(table3), (GtkWidget *)labelprivkey, 0, 1, 1, 2, GTK_FILL, 0, 5, 5);
+  gtk_table_attach(GTK_TABLE(table3),(GtkWidget *)labelprivkey,0,1,1,2,GTK_FILL,0,5,5);
 
   entryprivkey = (GtkEntry *)gtk_entry_new();
-  gtk_table_attach(GTK_TABLE(table3), (GtkWidget *)entryprivkey, 1, 2, 1, 2, GTK_EXPAND | GTK_FILL, 0, 5, 5);
+  gtk_table_attach(GTK_TABLE(table3),(GtkWidget *)entryprivkey,1,2,1,2,GTK_EXPAND|GTK_FILL,0,5,5);
   data->entryprivkey = entryprivkey;
 
   labelpassphrase = (GtkLabel *)gtk_label_new("Passphrase:");
   gtk_misc_set_alignment((GtkMisc *)labelpassphrase,0,0);
-  gtk_table_attach(GTK_TABLE(table3), (GtkWidget *)labelpassphrase, 0, 1, 2, 3, GTK_FILL, 0, 5, 5);
+  gtk_table_attach(GTK_TABLE(table3),(GtkWidget *)labelpassphrase,0,1,2,3,GTK_FILL,0,5,5);
 
   entrypassphrase = (GtkEntry *)gtk_entry_new();
   gtk_entry_set_visibility((GtkEntry *)entrypassphrase,FALSE);
-  gtk_table_attach(GTK_TABLE(table3), (GtkWidget *)entrypassphrase, 1, 2, 2, 3, GTK_EXPAND | GTK_FILL, 0, 5, 5);
+  gtk_table_attach(GTK_TABLE(table3),(GtkWidget *)entrypassphrase,1,2,2,3,GTK_EXPAND|GTK_FILL,0,5,5);
   data->entrypassphrase = entrypassphrase;
 
   labelpassphrase_confirm = (GtkLabel *)gtk_label_new("Confirm:");
   gtk_misc_set_alignment((GtkMisc *)labelpassphrase_confirm,0,0);
-  gtk_table_attach(GTK_TABLE(table3), (GtkWidget *)labelpassphrase_confirm, 0, 1, 3, 4, GTK_FILL, 0, 5, 5);
+  gtk_table_attach(GTK_TABLE(table3),(GtkWidget *)labelpassphrase_confirm,0,1,3,4,GTK_FILL,0,5,5);
 
   entrypassphrase_confirm = (GtkEntry *)gtk_entry_new();
   gtk_entry_set_visibility((GtkEntry *)entrypassphrase_confirm,FALSE);
-  gtk_table_attach(GTK_TABLE(table3), (GtkWidget *)entrypassphrase_confirm, 1, 2, 3, 4, GTK_EXPAND | GTK_FILL, 0, 5, 5);
+  gtk_table_attach(GTK_TABLE(table3),(GtkWidget *)entrypassphrase_confirm,1,2,3,4,GTK_EXPAND|GTK_FILL,0,5,5);
   data->entrypassphrase_confirm = entrypassphrase_confirm;
 
   button_decrypt = gtk_check_button_new_with_label ("decrypt");
-  gtk_table_attach(GTK_TABLE(table3), (GtkWidget *)button_decrypt, 0, 1, 4, 5, GTK_FILL, 0, 5, 5);
+  gtk_table_attach(GTK_TABLE(table3),(GtkWidget *)button_decrypt,0,1,4,5,GTK_FILL,0,5,5);
   data->button_decrypt = button_decrypt;  
 
   button_mini_key= gtk_check_button_new_with_label ("minimal");
-  gtk_table_attach(GTK_TABLE(table3), (GtkWidget *)button_mini_key, 1, 2, 4, 5, GTK_FILL, 0, 5, 5);
+  gtk_table_attach(GTK_TABLE(table3),(GtkWidget *)button_mini_key,1,2,4,5,GTK_FILL,0,5,5);
   data->button_mini_key = button_mini_key;
 
   progress = (GtkProgressBar *)gtk_progress_bar_new();
-  gtk_table_attach(GTK_TABLE(table1),(GtkWidget *)progress, 1, 2, 3, 4, GTK_FILL, GTK_SHRINK | GTK_FILL, 5, 0);
+  gtk_table_attach(GTK_TABLE(table1),(GtkWidget *)progress,1,2,3,4,GTK_FILL,GTK_SHRINK|GTK_FILL,5,0);
   hbuttonbox = (GtkHButtonBox *)gtk_hbutton_box_new();
   
   button_enable = (GtkButton *)gtk_button_new_with_label("Generate");
   gtk_widget_set_size_request((GtkWidget *)button_enable,120,-1);
-  g_signal_connect(G_OBJECT(button_enable), "clicked", G_CALLBACK(cb_execute_install), data);
+  g_signal_connect(G_OBJECT(button_enable),"clicked",G_CALLBACK(cb_execute_install),data);
   gtk_container_add((GtkContainer *)hbuttonbox,(GtkWidget *)button_enable);
   data->button_enable = button_enable;
   
-  gtk_table_attach(GTK_TABLE(table1), (GtkWidget *)hbuttonbox, 1, 2, 4, 5, 0, 0, 5, 5);
+  gtk_table_attach(GTK_TABLE(table1),(GtkWidget *)hbuttonbox,1,2,4,5,0,0,5,5);
   data->message = message;
   data->progress = progress;
   data->hbuttonbox = hbuttonbox;
@@ -538,8 +539,8 @@ int gui_status(int argc, char ** argv, Data * data) {
   
   g_free(str);
 
+  gtk_widget_grab_focus((GtkWidget *)button_enable);
   gtk_widget_show_all((GtkWidget *)window);
-
   gtk_widget_grab_focus((GtkWidget *)button_enable);
 
   gtk_main();
@@ -568,7 +569,7 @@ int main(int argc, char ** argv) {
 
   gchar * procpath = g_malloc(32);
   gint pid = getpid();
-  sprintf(procpath, "/proc/%d/exe", pid);
+  sprintf(procpath,"/proc/%d/exe",pid);
 
   gchar * processpath = (gchar *) get_readlink(procpath);
 
