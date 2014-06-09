@@ -42,17 +42,17 @@ struct _Data {
   GtkWidget * button_mini_key;
 };
 
-static void cb_execute_install(GtkButton * button, Data * data);
-static void cb_execute_reinstall(GtkButton * button, Data * data);
-static void cb_execute_remove(GtkButton * button, Data * data);
-static void cb_execute_update(GtkButton * button, Data * data);
+static void cb_execute_install (GtkButton * button, Data * data);
+static void cb_execute_reinstall (GtkButton * button, Data * data);
+static void cb_execute_remove (GtkButton * button, Data * data);
+static void cb_execute_update (GtkButton * button, Data * data);
 
 /* Get the substring of str starting at index begin and with length len
    str: The string to get the substring of
    begin: The starting index
    len: The length of the substring
    Return a newly allocated copy of the substring, or 0 if the substring is improperly defined */
-gchar* substring(const gchar* str, size_t begin, size_t len) {
+gchar * substring (const gchar* str, size_t begin, size_t len) {
   if (str == 0 || strlen(str) == 0 || strlen(str) < begin || strlen(str) < (begin+len))
     return 0;
 
@@ -62,7 +62,7 @@ gchar* substring(const gchar* str, size_t begin, size_t len) {
 /* Get the absolute path of the given process path, by following all links via readlink()
    procpath: The given process path
    Return the absolute path */
-gchar * get_readlink(gchar * procpath) {
+gchar * get_readlink (gchar * procpath) {
 
     gint size = 100;
     gchar * buffer = g_malloc(size);
@@ -86,7 +86,7 @@ gchar * get_readlink(gchar * procpath) {
 /* Get the directory containing the given file.
    path: The path of the given file
    Return the name of the directory */
-gchar * get_dirname(gchar * path) {
+gchar * get_dirname (gchar * path) {
 
   gchar * index = path + strlen(path) - 1;
   int len = strlen(path);
@@ -105,7 +105,7 @@ gchar * get_dirname(gchar * path) {
    argc: The number of arguments
    argv: The array of arguments to search in
    Return the index of the wanted argument, or -1 if it does not exist. */
-gint getargi(gchar * target, int argc, char ** argv) {
+gint getargi (gchar * target, int argc, char ** argv) {
   int i = 1;
   while (i < argc) {
     if (strcmp(target,argv[i]) == 0) {
@@ -117,13 +117,13 @@ gint getargi(gchar * target, int argc, char ** argv) {
 }
 
 /* Clean any remnants of the child process */
-static void cb_child_watch(GPid  pid, gint  status, Data * data) {
+static void cb_child_watch (GPid  pid, gint  status, Data * data) {
     g_spawn_close_pid(pid);
 }
  
 /* Read from stderr
    Return TRUE if successful */
-static gboolean cb_err_watch(GIOChannel * channel, GIOCondition  cond, Data * data) {
+static gboolean cb_err_watch (GIOChannel * channel, GIOCondition  cond, Data * data) {
     gchar *string;
     gsize  size;
     if (cond == G_IO_HUP) {
@@ -139,7 +139,7 @@ static gboolean cb_err_watch(GIOChannel * channel, GIOCondition  cond, Data * da
 
 /* Read from stdout and change the displayed message and button state accordingly
    Return TRUE if successful */
-static gboolean cb_out_watch(GIOChannel * channel, GIOCondition  cond, Data * data) {
+static gboolean cb_out_watch (GIOChannel * channel, GIOCondition  cond, Data * data) {
 
     gchar *string;
     gsize  size;
@@ -197,19 +197,19 @@ static gboolean cb_out_watch(GIOChannel * channel, GIOCondition  cond, Data * da
 }
 
 /* Move the progess bar once the corresponding timeout event occurs */
-static gboolean cb_timeout(Data *data) {
+static gboolean cb_timeout (Data * data) {
     gtk_progress_bar_pulse(data->progress);
     return(TRUE);
 }
 
 /* Ask for more entropy once the corresponding timeout event occurs */
-static gboolean cb_timeout2(Data *data) {
+static gboolean cb_timeout2 (Data * data) {
   gtk_label_set_label(data->message,"Shake your mouse for more entropy");
   return(FALSE);
 }
 
 /* Perform the action that was set in the action variable */
-static void cb_execute(GtkButton * button,Data * data) {
+static void cb_execute (GtkButton * button,Data * data) {
 
     GPid pid;
     gchar ** argv;
@@ -317,14 +317,14 @@ static void cb_execute(GtkButton * button,Data * data) {
 }
 
 /* Set action to install and call for it to execute, once the corresponding event occurs */
-static void cb_execute_install(GtkButton * button, Data * data) {
+static void cb_execute_install (GtkButton * button, Data * data) {
   data->action = strdup("install");
   cb_execute(button,data);
 }
 
 /* Perform the install action, i.e. call the qrencode function with the given parameters.
    Return 0 on success */
-int install_pack(int argc, char **argv, Data * data) {
+int install_pack (int argc, char **argv, Data * data) {
 
   int ret;
 
@@ -372,7 +372,7 @@ int install_pack(int argc, char **argv, Data * data) {
   }
 
   char ** generate_result = (char **)malloc(sizeof(char *)*2);
-  ret = generate_key(1,rflag,eflag,0,outdir,0,0,passphrase,privkey,sflag,generate_result);
+  ret = generate_key(1,rflag,eflag,0,sflag,outdir,0,0,passphrase,privkey,generate_result);
   if (ret==0) {
     char * address = generate_result[0];
     fprintf(stdout,"Saved to %s.pdf\n",address);
@@ -407,7 +407,7 @@ int install_pack(int argc, char **argv, Data * data) {
 
 /* Show the GUI.
    Return 0 on success */
-int gui_status(int argc, char ** argv, Data * data) {
+int gui_status (int argc, char ** argv, Data * data) {
 
   GtkWindow * window;
   GtkTable * table1, * table2, * table3;
@@ -549,7 +549,7 @@ int gui_status(int argc, char ** argv, Data * data) {
 
 /* Show the GUI or perform the install (qrencode) action 
    Return 0 on success */
-int main(int argc, char ** argv) {
+int main (int argc, char ** argv) {
 
   int ret = 0;
 

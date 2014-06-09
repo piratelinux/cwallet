@@ -13,7 +13,7 @@
    -e to encrypt
    -u to use uncompressed public keys
    Return 0 if successful */
-int main(int argc, char ** argv) {
+int main (int argc, char ** argv) {
 
   char * walletfile = 0;
   int addressmatch = 0;
@@ -108,7 +108,7 @@ int main(int argc, char ** argv) {
 
   if ((wflag==0) && (aflag==0) && ((rflag==1)||(kflag==1))) {
     char ** generate_result = (char **)malloc(sizeof(char **)*2);
-    ret = generate_key(qflag, rflag, eflag, uflag, dvalue, ovalue, tvalue, pvalue, kvalue, sflag, generate_result);
+    ret = generate_key(qflag,rflag,eflag,uflag,sflag,dvalue,ovalue,tvalue,pvalue,kvalue,generate_result);
     if (ret == 0) {
       fprintf(stdout,"%s\t%s\n",generate_result[0],generate_result[1]);
       fflush(stdout);

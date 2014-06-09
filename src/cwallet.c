@@ -6,7 +6,7 @@ const int privlen = 32;
 const char * b58chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 const char * b64chars = " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-";
 
-int fill_latex_lines (int maxncharforline, char * source, char * target, int startncharforline) {
+int fill_latex_lines (char * target, char * source, int maxncharforline, int startncharforline) {
   char * target_it = target;
   char * source_it = source;
   int ncharforline = startncharforline;
@@ -94,7 +94,7 @@ int qrencode (char * bc_address, char * bc_privkey, char * dvalue, char * ovalue
   strcpy(cmd,"echo '\\documentclass{article}\\usepackage{graphicx}\\usepackage[top=1in, bottom=1in, left=0in, right=0in]{geometry}\\usepackage{multicol}\\begin{document}\\pagenumbering{gobble}");
   if (sflag == 1) {
     strcat(cmd,"\\newpage\\begin{multicols}{2}{\\raggedleft\\texttt{~\\\\");
-    ret = fill_latex_lines(6,bc_privkey,cmd+strlen(cmd),0);
+    ret = fill_latex_lines(cmd+strlen(cmd),bc_privkey,6,0);
     int nchardiff = 6 - ret;
     while (nchardiff > 0) {
       strcat(cmd,".");
@@ -114,9 +114,9 @@ int qrencode (char * bc_address, char * bc_privkey, char * dvalue, char * ovalue
     strcat(cmd,"\\par}");
     if ((pvalue != 0) && (eflag == 1)) {
       strcat(cmd,"\\newpage\\begin{multicols}{2}{\\raggedleft\\texttt{~\\\\");
-      ret = fill_latex_lines(11,bc_privkey,cmd+strlen(cmd),0);
+      ret = fill_latex_lines(cmd+strlen(cmd),bc_privkey,11,0);
       strcat(cmd,".");
-      ret = fill_latex_lines(11,pvalue,cmd+strlen(cmd),ret+1);
+      ret = fill_latex_lines(cmd+strlen(cmd),pvalue,11,ret+1);
       int nchardiff = 11 - ret;
       while (nchardiff > 0) {
 	strcat(cmd,".");
@@ -176,7 +176,7 @@ int qrencode (char * bc_address, char * bc_privkey, char * dvalue, char * ovalue
   return(0);
 }
 
-int indexof(const char c, const char * str) {
+int indexof (const char c, const char * str) {
   int i=0;
   while(*str != '\0') {
     if (*str == c) {
@@ -188,7 +188,7 @@ int indexof(const char c, const char * str) {
   return(-1);
 }
 
-int generate_key(unsigned char qflag, unsigned char rflag, unsigned char eflag, unsigned char uflag, char * dvalue, char * ovalue, char * tvalue, char * pvalue, char * kvalue, unsigned char sflag, char ** result) {
+int generate_key (unsigned char qflag, unsigned char rflag, unsigned char eflag, unsigned char uflag, unsigned char sflag, char * dvalue, char * ovalue, char * tvalue, char * pvalue, char * kvalue, char ** result) {
 
   int ret = 0;
   
@@ -500,7 +500,7 @@ int generate_key(unsigned char qflag, unsigned char rflag, unsigned char eflag, 
   return(0);
 }
 
-int priv_to_pub(unsigned char * result, size_t m, const unsigned char * priv, size_t n) {
+int priv_to_pub (unsigned char * result, size_t m, const unsigned char * priv, size_t n) {
 
   int ret = 0;
   int i = 0;
@@ -551,7 +551,7 @@ int priv_to_pub(unsigned char * result, size_t m, const unsigned char * priv, si
   return(0);
 }
 
-int b58_to_uchar(unsigned char * result, size_t m, const char * b58, size_t n, unsigned char check_reverse) {
+int b58_to_uchar (unsigned char * result, size_t m, const char * b58, size_t n, unsigned char check_reverse) {
 
   BIGNUM * tot_bn = 0;
   BN_dec2bn(&tot_bn,"0");
@@ -644,7 +644,7 @@ int b58_to_uchar(unsigned char * result, size_t m, const char * b58, size_t n, u
 }
 
 
-int uchar_to_b58(char * result, size_t m, const unsigned char * uchar, size_t n, unsigned char check_reverse) {
+int uchar_to_b58 (char * result, size_t m, const unsigned char * uchar, size_t n, unsigned char check_reverse) {
 
   BIGNUM * tot_bn = 0;
   BN_dec2bn(&tot_bn,"0");
@@ -737,7 +737,7 @@ int uchar_to_b58(char * result, size_t m, const unsigned char * uchar, size_t n,
 }
 
 
-int b64_to_uchar(unsigned char * result, size_t m, const char * b64, size_t n, unsigned char check_reverse) {
+int b64_to_uchar (unsigned char * result, size_t m, const char * b64, size_t n, unsigned char check_reverse) {
 
   BIGNUM * tot_bn = 0;
   BN_dec2bn(&tot_bn,"0");
@@ -836,7 +836,7 @@ int b64_to_uchar(unsigned char * result, size_t m, const char * b64, size_t n, u
   return(offset_saved);
 }
 
-int uchar_to_b64(char * result, size_t m, const unsigned char * uchar, size_t n, unsigned char check_reverse) {
+int uchar_to_b64 (char * result, size_t m, const unsigned char * uchar, size_t n, unsigned char check_reverse) {
 
   BIGNUM * tot_bn = 0;
   BN_dec2bn(&tot_bn,"0");
@@ -928,7 +928,7 @@ int uchar_to_b64(char * result, size_t m, const unsigned char * uchar, size_t n,
   return(offset);
 }
 
-int add_uchars(unsigned char * result, const unsigned char * c1, const unsigned char * c2, size_t n) {
+int add_uchars (unsigned char * result, const unsigned char * c1, const unsigned char * c2, size_t n) {
   int i;
   for (i=0; i<n; i++) {
     result[i] = (unsigned char)(((unsigned int)(c1[i])+(unsigned int)(c2[i]))%256);
@@ -936,7 +936,7 @@ int add_uchars(unsigned char * result, const unsigned char * c1, const unsigned 
   return(0);
 }
 
-int subtract_uchars(unsigned char * result, const unsigned char * c1, const unsigned char * c2, size_t n) {
+int subtract_uchars (unsigned char * result, const unsigned char * c1, const unsigned char * c2, size_t n) {
   int i;
   for (i=0; i<n; i++) {
     int result_int = (((int)(c1[i])-(int)(c2[i]))%256);
@@ -950,7 +950,7 @@ int subtract_uchars(unsigned char * result, const unsigned char * c1, const unsi
   return(0);
 }
 
-int privkey_to_bc_format(char * result, const unsigned char * key, size_t n, const unsigned char * pubkey, size_t m) {
+int privkey_to_bc_format (char * result, const unsigned char * key, size_t n, const unsigned char * pubkey, size_t m) {
 
   int ret = 0;
   int i = 0;
@@ -996,7 +996,7 @@ int privkey_to_bc_format(char * result, const unsigned char * key, size_t n, con
   return(ret);
 }
 
-int pubkey_to_bc_format(char * result, const unsigned char * key, size_t n, unsigned char type) {
+int pubkey_to_bc_format (char * result, const unsigned char * key, size_t n, unsigned char type) {
 
   int ret = 0;
   unsigned char * hash1 = malloc(32);
