@@ -16,9 +16,15 @@ int fill_latex_lines (int maxncharforline, char * source, char * target, int sta
       ncharforline = 0;
       target_it += 2;
     }
-    *target_it = *source_it;
+    if (*source_it == ' ') {
+      memcpy(target_it,"\\symbol{32}",11);
+      target_it += 11;
+    }
+    else {
+      *target_it = *source_it;
+      target_it++;
+    }
     source_it++;
-    target_it++;
     ncharforline++;
   }
   *target_it = '\0';
@@ -89,6 +95,11 @@ int qrencode (char * bc_address, char * bc_privkey, char * dvalue, char * ovalue
   if (sflag == 1) {
     strcat(cmd,"\\newpage\\begin{multicols}{2}{\\raggedleft\\texttt{~\\\\");
     ret = fill_latex_lines(6,bc_privkey,cmd+strlen(cmd),0);
+    int nchardiff = 6 - ret;
+    while (nchardiff > 0) {
+      strcat(cmd,".");
+      nchardiff--;
+    }
     strcat(cmd,"}\\par}\\columnbreak{\\raggedright\\includegraphics{");
     strcat(cmd,bc_address);
     strcat(cmd,".png}\\par}\\end{multicols}");
@@ -106,6 +117,11 @@ int qrencode (char * bc_address, char * bc_privkey, char * dvalue, char * ovalue
       ret = fill_latex_lines(11,bc_privkey,cmd+strlen(cmd),0);
       strcat(cmd,".");
       ret = fill_latex_lines(11,pvalue,cmd+strlen(cmd),ret+1);
+      int nchardiff = 11 - ret;
+      while (nchardiff > 0) {
+	strcat(cmd,".");
+	nchardiff--;
+      }
       strcat(cmd,"}\\par}\\columnbreak{\\raggedright\\includegraphics{");
       strcat(cmd,bc_privkey);
       strcat(cmd,".png}\\par}\\end{multicols}");
