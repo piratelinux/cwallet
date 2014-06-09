@@ -261,6 +261,10 @@ int generate_key(unsigned char qflag, unsigned char rflag, unsigned char eflag, 
 	  return(1);
 	}
       }
+      if (pvalue[0] == ' ') {
+	strcpy(result[0],"The first character of the passphrase cannot be the space character\n");
+	return(1);
+      }
 
       unsigned char * password_uchar = (unsigned char *)malloc(privlen+1);
       ret = b64_to_uchar(password_uchar,privlen,pvalue,strlen(pvalue),1);
@@ -360,6 +364,23 @@ int generate_key(unsigned char qflag, unsigned char rflag, unsigned char eflag, 
       privkey_2 = privkey_1;
     }
     else {
+
+      int passlen = strlen(pvalue);
+      if (passlen > 42) {
+        strcpy(result[0],"The passphrase cannot be longer than 42 characters\n");
+        return(1);
+      }
+      for (i=0;i<passlen;i++) {
+        if (indexof(pvalue[i],b64chars)==-1) {
+          strcpy(result[0],"The passphrase may only contain letters, numbers, spaces, and hyphens\n");
+          return(1);
+        }
+      }
+      if (pvalue[0] == ' ') {
+        strcpy(result[0],"The first character of the passphrase cannot be a space\n");
+        return(1);
+      }
+
       privkey_2 = (unsigned char *)malloc(privlen);
       unsigned char * password_uchar = (unsigned char *)malloc(privlen+1);
       ret = b64_to_uchar(password_uchar,privlen,pvalue,strlen(pvalue),1);
@@ -584,7 +605,7 @@ int b58_to_uchar(unsigned char * result, size_t m, const char * b58, size_t n, u
 
   input_it = b58;
   for (i=1; i<n; i++) {
-    if (*input_it == '1') {
+    if ((*input_it == '1') && (offset > 0)) {
       output_it--;
       *output_it = 0;
       offset--;
@@ -677,7 +698,7 @@ int uchar_to_b58(char * result, size_t m, const unsigned char * uchar, size_t n,
 
   input_it = uchar;
   for (i=1; i<n; i++) {
-    if (*input_it == '\0') {
+    if ((*input_it == '\0') && (offset > 0)) {
       output_it--;
       *output_it = '1';
       offset--;
@@ -770,7 +791,7 @@ int b64_to_uchar(unsigned char * result, size_t m, const char * b64, size_t n, u
 
   input_it = b64;
   for (i=1; i<n; i++) {
-    if (*input_it == b64chars[0]) {
+    if ((*input_it == b64chars[0]) && (offset > 0)) {
       output_it--;
       *output_it = 0;
       offset--;
@@ -788,7 +809,7 @@ int b64_to_uchar(unsigned char * result, size_t m, const char * b64, size_t n, u
       return(-1);
     }
     input_it = b64;
-    const unsigned char * input_chk = result_b64 + ret;
+    const char * input_chk = result_b64 + ret;
     for (i=0; i<n; i++) {
       if (*input_chk != *input_it) {
         return(-1);
@@ -800,7 +821,7 @@ int b64_to_uchar(unsigned char * result, size_t m, const char * b64, size_t n, u
   }
 
   int offset_saved = offset;
-  while (offset>0) {
+  while (offset > 0) {
     output_it--;
     *output_it = 0;
     offset--;
@@ -869,7 +890,7 @@ int uchar_to_b64(char * result, size_t m, const unsigned char * uchar, size_t n,
 
   input_it = uchar;
   for (i=1; i<n; i++) {
-    if (*input_it == '\0') {
+    if ((*input_it == '\0') && (offset > 0)) {
       output_it--;
       *output_it = b64chars[0];
       offset--;
