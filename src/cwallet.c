@@ -6,9 +6,9 @@ const int privlen = 32;
 const char * b58chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 const char * b64chars = " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-";
 
-int fill_latex_lines (char * target, char * source, int maxncharforline, int startncharforline) {
+int fill_latex_lines (char * const target, const char * source, const int maxncharforline, const int startncharforline) {
   char * target_it = target;
-  char * source_it = source;
+  const char * source_it = source;
   int ncharforline = startncharforline;
   while(*source_it != '\0') {
     if (ncharforline >= maxncharforline) {
@@ -31,7 +31,7 @@ int fill_latex_lines (char * target, char * source, int maxncharforline, int sta
   return(ncharforline);
 }
 
-int qrencode (char * bc_address, char * bc_privkey, char * dvalue, char * ovalue, char * pvalue, unsigned char eflag, unsigned char sflag) {
+int qrencode (const char * const bc_address, const char * const bc_privkey, const char * const dvalue, const char * const ovalue, const char * const pvalue, const unsigned char eflag, const unsigned char sflag) {
 
   int ret = 0;
   char * cmd = malloc(1000);
@@ -188,7 +188,7 @@ int indexof (const char c, const char * str) {
   return(-1);
 }
 
-int generate_key (unsigned char qflag, unsigned char rflag, unsigned char eflag, unsigned char uflag, unsigned char sflag, char * dvalue, char * ovalue, char * tvalue, char * pvalue, char * kvalue, char ** result) {
+int generate_key (char ** const result, const unsigned char qflag, const unsigned char rflag, const unsigned char eflag, const unsigned char uflag, const unsigned char sflag, const char * dvalue, const char * ovalue, const char * tvalue, const char * pvalue, const char * kvalue) {
 
   int ret = 0;
   
@@ -209,7 +209,10 @@ int generate_key (unsigned char qflag, unsigned char rflag, unsigned char eflag,
   strcpy(result[1],"");
 
   if (rflag == 1) {
-    eflag = 1;
+    if (eflag != 1) {
+      strcpy(result[0],"A private key is needed to decrypt\n");
+      return(1);
+    }
     unsigned char * privkey = malloc(privlen);
     int randomData = open("/dev/random", O_RDONLY);
     size_t randomDataLen = 0;
@@ -500,7 +503,7 @@ int generate_key (unsigned char qflag, unsigned char rflag, unsigned char eflag,
   return(0);
 }
 
-int priv_to_pub (unsigned char * result, size_t m, const unsigned char * priv, size_t n) {
+int priv_to_pub (unsigned char * const result, const size_t m, const unsigned char * const priv, const size_t n) {
 
   int ret = 0;
   int i = 0;
@@ -551,7 +554,7 @@ int priv_to_pub (unsigned char * result, size_t m, const unsigned char * priv, s
   return(0);
 }
 
-int b58_to_uchar (unsigned char * result, size_t m, const char * b58, size_t n, unsigned char check_reverse) {
+int b58_to_uchar (unsigned char * const result, const size_t m, const char * b58, const size_t n, const unsigned char check_reverse) {
 
   BIGNUM * tot_bn = 0;
   BN_dec2bn(&tot_bn,"0");
@@ -644,7 +647,7 @@ int b58_to_uchar (unsigned char * result, size_t m, const char * b58, size_t n, 
 }
 
 
-int uchar_to_b58 (char * result, size_t m, const unsigned char * uchar, size_t n, unsigned char check_reverse) {
+int uchar_to_b58 (char * const result, const size_t m, const unsigned char * uchar, const size_t n, const unsigned char check_reverse) {
 
   BIGNUM * tot_bn = 0;
   BN_dec2bn(&tot_bn,"0");
@@ -737,7 +740,7 @@ int uchar_to_b58 (char * result, size_t m, const unsigned char * uchar, size_t n
 }
 
 
-int b64_to_uchar (unsigned char * result, size_t m, const char * b64, size_t n, unsigned char check_reverse) {
+int b64_to_uchar (unsigned char * const result, const size_t m, const char * b64, const size_t n, const unsigned char check_reverse) {
 
   BIGNUM * tot_bn = 0;
   BN_dec2bn(&tot_bn,"0");
@@ -836,7 +839,7 @@ int b64_to_uchar (unsigned char * result, size_t m, const char * b64, size_t n, 
   return(offset_saved);
 }
 
-int uchar_to_b64 (char * result, size_t m, const unsigned char * uchar, size_t n, unsigned char check_reverse) {
+int uchar_to_b64 (char * const result, const size_t m, const unsigned char * uchar, const size_t n, const unsigned char check_reverse) {
 
   BIGNUM * tot_bn = 0;
   BN_dec2bn(&tot_bn,"0");
@@ -928,7 +931,7 @@ int uchar_to_b64 (char * result, size_t m, const unsigned char * uchar, size_t n
   return(offset);
 }
 
-int add_uchars (unsigned char * result, const unsigned char * c1, const unsigned char * c2, size_t n) {
+int add_uchars (unsigned char * const result, const unsigned char * c1, const unsigned char * c2, const size_t n) {
   int i;
   for (i=0; i<n; i++) {
     result[i] = (unsigned char)(((unsigned int)(c1[i])+(unsigned int)(c2[i]))%256);
@@ -936,7 +939,7 @@ int add_uchars (unsigned char * result, const unsigned char * c1, const unsigned
   return(0);
 }
 
-int subtract_uchars (unsigned char * result, const unsigned char * c1, const unsigned char * c2, size_t n) {
+int subtract_uchars (unsigned char * const result, const unsigned char * c1, const unsigned char * c2, const size_t n) {
   int i;
   for (i=0; i<n; i++) {
     int result_int = (((int)(c1[i])-(int)(c2[i]))%256);
@@ -950,7 +953,7 @@ int subtract_uchars (unsigned char * result, const unsigned char * c1, const uns
   return(0);
 }
 
-int privkey_to_bc_format (char * result, const unsigned char * key, size_t n, const unsigned char * pubkey, size_t m) {
+int privkey_to_bc_format (char * const result, const unsigned char * key, size_t n, const unsigned char * pubkey, const size_t m) {
 
   int ret = 0;
   int i = 0;
@@ -996,7 +999,7 @@ int privkey_to_bc_format (char * result, const unsigned char * key, size_t n, co
   return(ret);
 }
 
-int pubkey_to_bc_format (char * result, const unsigned char * key, size_t n, unsigned char type) {
+int pubkey_to_bc_format (char * const result, const unsigned char * key, const size_t n, const unsigned char type) {
 
   int ret = 0;
   unsigned char * hash1 = malloc(32);

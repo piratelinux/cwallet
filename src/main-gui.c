@@ -372,7 +372,7 @@ int install_pack (int argc, char **argv, Data * data) {
   }
 
   char ** generate_result = (char **)malloc(sizeof(char *)*2);
-  ret = generate_key(1,rflag,eflag,0,sflag,outdir,0,0,passphrase,privkey,generate_result);
+  ret = generate_key(generate_result,1,rflag,eflag,0,sflag,outdir,0,0,passphrase,privkey);
   if (ret==0) {
     char * address = generate_result[0];
     fprintf(stdout,"Saved to %s.pdf\n",address);
