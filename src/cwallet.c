@@ -258,6 +258,10 @@ int generate_key (char ** const result, const unsigned char qflag, const unsigne
 	strcpy(result[0],"The passphrase cannot be longer than 42 characters\n");
 	return(1);
       }
+      if (passlen==0) {
+	strcpy(result[0],"The passphrase cannot be empty\n");
+	return(1);
+      }
       for (i=0;i<passlen;i++) {
 	if (indexof(pvalue[i],b64chars)==-1) {
 	  strcpy(result[0],"The passphrase may only contain letters, numbers, spaces, and hyphens\n");
@@ -361,16 +365,26 @@ int generate_key (char ** const result, const unsigned char qflag, const unsigne
       }
     }
 
-    unsigned char * privkey_2 = 0;
+    unsigned char * privkey_2 = (unsigned char *)malloc(privlen);
 
     if (pvalue == 0) {
-      privkey_2 = privkey_1;
+      memcpy(privkey_2,privkey_1,privlen);
+      for (i=0; i<privlen; i++) {
+	if (privkey_2[i] != privkey_1[i]) {
+	  strcpy(result[0],"Cannot copy private key\n");
+	  return(1);
+	}
+      }
     }
     else {
 
       int passlen = strlen(pvalue);
       if (passlen > 42) {
         strcpy(result[0],"The passphrase cannot be longer than 42 characters\n");
+        return(1);
+      }
+      if (passlen==0) {
+        strcpy(result[0],"The passphrase cannot be empty\n");
         return(1);
       }
       for (i=0;i<passlen;i++) {
@@ -384,7 +398,6 @@ int generate_key (char ** const result, const unsigned char qflag, const unsigne
         return(1);
       }
 
-      privkey_2 = (unsigned char *)malloc(privlen);
       unsigned char * password_uchar = (unsigned char *)malloc(privlen+1);
       ret = b64_to_uchar(password_uchar,privlen,pvalue,strlen(pvalue),1);
       if (ret < 0) {
